@@ -2,7 +2,7 @@ import 'package:chillout_hrm/widgets/error_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import '../widgets/rounded_button.dart';
 import '../global.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 
 /// Landingpage of the App which provides some information about how to use the app and offer navigation to bluetooth devices
 /// as well as to the body tracking page
@@ -24,18 +24,34 @@ class _HomePageState extends State<HomePage> {
   // Strings used throughout the page
   final String _disclaimerText = "To use the app, please make sure that you have enabled bluetooth on your phone and your earable device.";
   final String _startButtonText = "Get started";
-  final String _errorMessage = 'Please turn on bluetooth';
+  final String _errorBluetoothOff = 'Please turn on bluetooth';
+  final String _errorBtNotSupported = 'This device does not support bluetooth';
 
   /// Navigate to the body tracker page
   void _navigateBodyTracking() async {
-    // check if bluetooth is on and respond with going to the scanning page or showing error
-    // after await check if context is still valid and proceed only if it is
-    if (await FlutterBluePlus.adapterState.first == BluetoothAdapterState.on) {
+    // check if device supports bluetooth
+    if(await FlutterBlue.instance.isAvailable) {
+
+      // check if bluetooth is on and respond with going to the scanning page or showing error
+      // after await check if context is still valid and proceed only if it is
+      if (await FlutterBlue.instance.isOn) {
         if(!context.mounted) return;
-      Navigator.pushNamed(context, scanRoute);
+        Navigator.pushNamed(context, scanRoute);
+      } else {
+        showSnackBarError(_errorBluetoothOff);
+      }
+
     } else {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      showSnackBarError(_errorBtNotSupported);
+    }
+
+  }
+
+  /// Shows a snackbar error message at the bottom of the screen after checking
+  /// that the context is still valid
+  Future showSnackBarError(String message) async {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(),
         padding: const EdgeInsets.all(smallSpacing),
@@ -45,13 +61,10 @@ class _HomePageState extends State<HomePage> {
         duration: const Duration(seconds: 10),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.errorContainer,
-        content: ErrorSnackbarContent(
-          context: context,
-          message: _errorMessage,
-        ),
-      ));
-    }
+        content: ErrorSnackbarContent(context: context, message: message,))
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
   final String _title = 'Welcome';
 
   // Strings used throughout the page
-  final String _disclaimerText = "To use the app, please make sure that you have enabled bluetooth on your phone and your earable device.";
+  final String _disclaimerText = "To use the app, please make sure that your cosinus earable is active and bluetooth is enabled on your device.";
   final String _startButtonText = "Get started";
   final String _errorBluetoothOff = 'Please turn on bluetooth';
   final String _errorBtNotSupported = 'This device does not support bluetooth';

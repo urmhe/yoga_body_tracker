@@ -28,9 +28,9 @@ class _ScanPageState extends State<ScanPage> {
   final String _buttonStringStop = 'Stop scanning';
 
   // Error messages
-  final String _scanError = 'A problem occured during the scan';
-  final String _stopError = 'A problem occured while stopping the scan';
-  final String _bluetoothOff = 'Please do not turn off bluetooth';
+  final String _scanError = 'A problem occured during the scan.';
+  final String _stopError = 'A problem occured while stopping the scan.';
+  final String _bluetoothOff = 'Please keep bluetooth active while using the app.';
 
   // Variables and streams used for tracking the state of the scan
   bool _scanning = false;

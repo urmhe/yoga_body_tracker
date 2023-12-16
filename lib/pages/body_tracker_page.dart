@@ -6,6 +6,7 @@ import 'package:chillout_hrm/widgets/evaluation_container.dart';
 import 'package:chillout_hrm/widgets/yoga_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:synchronized/synchronized.dart';
 import '../global.dart';
 import '../widgets/error_snackbar_content.dart';
 
@@ -31,8 +32,8 @@ class _TrackerPageState extends State<TrackerPage> {
   final String _disconnectedString = 'Disconnected';
 
   // Error messages
-  final String _tooManyFailedConnectionAttemptsMessage = 'There were too many failed connection attempts. Check earable device and then try reconnecting.';
-  final String _wrongDeviceMessage = 'The selected device does not provide the required service. Please choose a different device.';
+  final String _failedConnectionAttemptMessage = 'Failed to connect. Please check whether the earable device is currently active.';
+  final String _wrongDeviceMessage = 'The selected device does not provide the required services. Please choose a different device.';
 
   // header TextStyle
   final TextStyle _headerTextStyle = const TextStyle(
@@ -49,6 +50,7 @@ class _TrackerPageState extends State<TrackerPage> {
   double _avgBodyTemp = 0;
 
   //Streamsubscriptions & bluetooth related variables
+  final int _maxAttempts = 2;
   int _connectionAttempts = 0;
   bool _keepReconnecting = true;
   BluetoothDeviceState _connectionState = BluetoothDeviceState.disconnected;
@@ -69,12 +71,12 @@ class _TrackerPageState extends State<TrackerPage> {
       if(context.mounted) {
         setState(() {
           _connectionState = state;
-
         });
       }
 
       // if device is not connected and bluetooth is on, then we try to establish a connection
-      if (state == BluetoothDeviceState.disconnected  && _connectionAttempts < 3 && _keepReconnecting) {
+      if (state == BluetoothDeviceState.disconnected  && _connectionAttempts < _maxAttempts && _keepReconnecting) {
+        debugPrint('::: call _connectDevice :::');
         _connectDevice();
       }
     });
@@ -87,26 +89,26 @@ class _TrackerPageState extends State<TrackerPage> {
     // service always have to be rediscovered on every connection attempt
     _services = [];
 
-    // update state to connecting
+    // update state to connecting since this state is not emitted by the stream but we want to show it on the screen
     if(context.mounted) {
       setState(() {
         _connectionState = BluetoothDeviceState.connecting;
       });
     }
 
-    // connect
-    try {
-      await widget.device.connect(
-      timeout: const Duration(seconds: 20),
-      );
-    } catch (e) {
-      // on failure the app will try reconnecting
-      _connectionAttempts++;
-      if (!(_connectionAttempts < 3)) {
-        showSnackBarError(_tooManyFailedConnectionAttemptsMessage);
+    // connect & handle timeout error
+    debugPrint('::: connect called :::');
+    await widget.device.connect(autoConnect: false).timeout(const Duration(seconds: 15), onTimeout: () {
+      debugPrint('::: onTimeout: connect call timed out -> Device is most likely not available :::');
+      if(context.mounted) {
+        setState(() {
+          _connectionState = BluetoothDeviceState.disconnected;
+        });
       }
+      showSnackBarError(_failedConnectionAttemptMessage);
       return;
-    }
+    });
+    debugPrint(':::::::: done connecting :::::::::::');
 
     // find services
     try {
@@ -115,10 +117,10 @@ class _TrackerPageState extends State<TrackerPage> {
       // if services cannot be discovered, then we disconnect from device which will trigger a reconnect.
       // This counts as a failed attempt at connecting for the purpose of the app
       _connectionAttempts++;
-      if (!(_connectionAttempts < 3)) {
-        showSnackBarError(_tooManyFailedConnectionAttemptsMessage);
+      if (!(_connectionAttempts < _maxAttempts)) {
+        showSnackBarError(_failedConnectionAttemptMessage);
       }
-      widget.device.disconnect();
+      await widget.device.disconnect();
       return;
       }
 
@@ -137,25 +139,32 @@ class _TrackerPageState extends State<TrackerPage> {
   /// code was taken from link above
   /// subscribes to the characteristics that provide heart rate and body temperature
   Future<void> subscribeToCharacteristics(List<BluetoothService> services) async {
-    for (var service in services) {
-      for (var characteristic in service.characteristics) {
-        switch (characteristic.uuid.toString()) {
+    // lock to sequentially call setNotifyValue(true) which prevents a bug in FlutterBlue which can cause a PlattformException
+    var lock = Lock();
 
+    for (BluetoothService service in services) {
+
+      for (BluetoothCharacteristic c in service.characteristics) {
+
+        switch (c.uuid.toString()) {
           case "00002a37-0000-1000-8000-00805f9b34fb":
-            await characteristic.setNotifyValue(true);
-            _heartRateSubscription = characteristic.value.listen(
-            (sensorData) => updateHeartRate(sensorData));
-
-            // delay to prevent BLE from crashing
-            await Future.delayed(const Duration(seconds: 3));
+            await lock.synchronized(() async {
+              await c.setNotifyValue(true);
+              await Future.delayed(const Duration(milliseconds: 300));
+              _heartRateSubscription = c.value.listen(
+                      (sensorData) => updateHeartRate(sensorData));
+              debugPrint('::: subscribed to heart rate :::');
+            });
             break;
 
           case "00002a1c-0000-1000-8000-00805f9b34fb":
-            await characteristic.setNotifyValue(true);
-            _bodyTempSubscription = characteristic.value.listen((sensorData) => updateBodyTemperature(sensorData),);
-
-            // delay to prevent BLE from crashing
-            await Future.delayed(const Duration(seconds: 3));
+            await lock.synchronized(() async {
+              await c.setNotifyValue(true);
+              await Future.delayed(const Duration(milliseconds: 300));
+              _bodyTempSubscription = c.value.listen((sensorData) =>
+                  updateBodyTemperature(sensorData),);
+              debugPrint('::: subscribed to body temperature :::');
+            });
             break;
 
           default:
@@ -176,7 +185,8 @@ class _TrackerPageState extends State<TrackerPage> {
 
   /// credits to https://github.com/teco-kit/cosinuss-flutter-new/blob/main/lib/main.dart
   /// Most of the code was taken from the file above.
-  /// Additional functionality was added so that the average body temp and the evaluation are calculated
+  /// Additional functionality was added so that the average body temp and the evaluation are calculated.
+  /// [sensorData] is the raw data that is received from the earable.
   void updateBodyTemperature(sensorData) {
     var flag;
     try {
@@ -205,6 +215,7 @@ class _TrackerPageState extends State<TrackerPage> {
   /// credits to https://github.com/teco-kit/cosinuss-flutter-new/blob/main/lib/main.dart
   /// Most of the code was taken from the file above.
   /// Additional functionality was added so that the average body temp and the evaluation are calculated
+  /// [sensorData] is the raw data that is received from the earable.
   void updateHeartRate(sensorData) {
     Uint8List bytes = Uint8List.fromList(sensorData);
 
@@ -229,7 +240,8 @@ class _TrackerPageState extends State<TrackerPage> {
     }
   }
 
-  /// Async method for showing an error snackbar at the bottom of the screen
+  /// Async method for showing an error snackbar at the bottom of the screen.
+  /// [message] is the Text that is displayed in the snackbar.
   Future showSnackBarError(String message) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -247,7 +259,7 @@ class _TrackerPageState extends State<TrackerPage> {
     );
   }
 
-  /// Build the text widget which displays the current state of the connection
+  /// Build the text widget which displays the current state of the connection.
   Widget buildStateText(BuildContext context) {
     Color textColor;
     String displayText;

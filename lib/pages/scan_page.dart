@@ -33,7 +33,7 @@ class _ScanPageState extends State<ScanPage> {
   final String _bluetoothOff =
       'Please keep bluetooth active while using the app.';
 
-  // Variables and streams used for tracking the state of the scan
+  // attributes and streams used for tracking the state of the scan
   bool _scanning = false;
   List<ScanResult> _scanResults = [];
   late StreamSubscription<List<ScanResult>> _scanResultsSubscription;

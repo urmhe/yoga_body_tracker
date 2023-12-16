@@ -48,11 +48,11 @@ class _TrackerPageState extends State<TrackerPage> {
   final TextStyle _headerTextStyle =
       const TextStyle(color: Colors.white, fontSize: 20);
 
-  // variables storing current heart rate and body temp
+  // current heart rate and body temp
   double _heartRate = 0;
   double _bodyTemp = 0;
 
-  //Streamsubscriptions & bluetooth related variables
+  //Streamsubscriptions & BLE related attribute
   final int _maxAttempts = 2;
   int _connectionAttempts = 0;
   bool _keepReconnecting = true;

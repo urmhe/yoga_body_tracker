@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
   final String _errorBtNotSupported = 'This device does not support bluetooth';
   final String _dataMissing = 'Please fill out all fields.';
 
-  // user data variables
+  // user input
   Sex? _sex;
   ExerciseFrequency? _frequency;
   int _userAge = 50;

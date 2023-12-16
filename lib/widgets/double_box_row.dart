@@ -7,31 +7,30 @@ import 'package:flutter/material.dart';
 class DoubleBoxRow extends StatelessWidget {
   const DoubleBoxRow({
     super.key,
-    required double currentValue,
-    required double avgValue,
-    required String unitString,
-  }) : _currentValue = currentValue, _avgValue = avgValue, _unitString = unitString;
+    required this.leftValue,
+    required this.rightValue,
+    required this.leftBottomText,
+    required this.rightBottomText,
+    required this.leftTopText,
+    required this.rightTopText,
+  });
 
-  // Variables for storing current values of body temp and the measurement unit
-  final double _currentValue;
-  final double _avgValue;
-  final String _unitString;
+  final double leftValue;
+  final double rightValue;
+  final String leftBottomText;
+  final String rightBottomText;
+  final String leftTopText;
+  final String rightTopText;
 
   // Predefined styling variables
   static const int _flexVal = 1;
-  static const double _numFontSize = 28;
+  static const double _numFontSize = 31;
 
   static const TextStyle _numTextStyle = TextStyle(
     color: Colors.black,
     fontSize: _numFontSize,
     fontWeight: FontWeight.bold,
   );
-
-
-  // Strings used throughout the widget
-  static const String _avgString = 'Avg.';
-  static const String _currString = 'Current';
-
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +48,9 @@ class DoubleBoxRow extends StatelessWidget {
               ),
               child: Column(
                   children: [
-                    const Text(_currString),
-                    Text("$_currentValue", style: _numTextStyle),
-                    Text(_unitString),
+                    Text(leftTopText),
+                    Text("$leftValue", style: _numTextStyle),
+                    Text(leftBottomText),
                   ]
               ),
             ),
@@ -69,9 +68,9 @@ class DoubleBoxRow extends StatelessWidget {
               ),
               child: Column(
                   children: [
-                    const Text(_avgString),
-                    Text("$_avgValue", style: _numTextStyle),
-                    Text(_unitString),
+                    Text(rightTopText),
+                    Text("$rightValue", style: _numTextStyle),
+                    Text(rightBottomText),
                   ]
               ),
             ),

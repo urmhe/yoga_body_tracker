@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../global.dart';
 import '../widgets/device_list_view.dart';
 import '../widgets/error_snackbar_content.dart';
 import '../widgets/rounded_button.dart';
-import '../global.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 
 /// Scan page scans for available bluetooth devices and lists them in a listView
 /// User can choose to connect to one of the available devices
@@ -18,7 +19,6 @@ class ScanPage extends StatefulWidget {
 }
 
 class _ScanPageState extends State<ScanPage> {
-
   // FlutterBlue instance
   FlutterBlue flutterBlue = FlutterBlue.instance;
 
@@ -30,7 +30,8 @@ class _ScanPageState extends State<ScanPage> {
   // Error messages
   final String _scanError = 'A problem occured during the scan.';
   final String _stopError = 'A problem occured while stopping the scan.';
-  final String _bluetoothOff = 'Please keep bluetooth active while using the app.';
+  final String _bluetoothOff =
+      'Please keep bluetooth active while using the app.';
 
   // Variables and streams used for tracking the state of the scan
   bool _scanning = false;
@@ -44,32 +45,31 @@ class _ScanPageState extends State<ScanPage> {
     super.initState();
 
     // listen to adapterstate and return to home screen is bluetooth is ever turned off
-    _adapterStateSubscription = flutterBlue.state.listen(
-        (state) {
-          if(state == BluetoothState.off) {
-            if(!context.mounted) return;
-            showSnackBarError(_bluetoothOff);
-            Navigator.popUntil(context, ModalRoute.withName(homeRoute));
-          }
-        }
-    );
-
+    _adapterStateSubscription = flutterBlue.state.listen((state) {
+      if (state == BluetoothState.off) {
+        if (!context.mounted) return;
+        showSnackBarError(_bluetoothOff);
+        Navigator.popUntil(context, ModalRoute.withName(homeRoute));
+      }
+    });
 
     // set up subscriptions to scanresults and scanning state
     _scanResultsSubscription = flutterBlue.scanResults.listen((results) {
       // update scanResults list based on stream and call setstate to update listview
-      if(!context.mounted) return;
-      setState(() {_scanResults = results;});
+      if (!context.mounted) return;
+      setState(() {
+        _scanResults = results;
+      });
     }, onError: (e) {
       showSnackBarError(_scanError);
     });
 
-    _isScanningSubscription = flutterBlue.isScanning.listen(
-        (state) {
-          if(!context.mounted) return;
-          setState(() {_scanning = state;});
-        }
-    );
+    _isScanningSubscription = flutterBlue.isScanning.listen((state) {
+      if (!context.mounted) return;
+      setState(() {
+        _scanning = state;
+      });
+    });
   }
 
   /// Shows a snackbar error message at the bottom of the screen after checking
@@ -86,8 +86,10 @@ class _ScanPageState extends State<ScanPage> {
         duration: const Duration(seconds: 10),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.errorContainer,
-        content: ErrorSnackbarContent(context: context, message: message,))
-    );
+        content: ErrorSnackbarContent(
+          context: context,
+          message: message,
+        )));
   }
 
   /// Stop the bluetooth scan. Shows error if something went wrong.
@@ -105,19 +107,22 @@ class _ScanPageState extends State<ScanPage> {
 
     // try starting the scan for device and show error snackbar in case of an error
     try {
-      await flutterBlue.startScan(
-        timeout: const Duration(seconds: 15));
+      await flutterBlue.startScan(timeout: const Duration(seconds: 15));
     } catch (e) {
       showSnackBarError(_scanError);
       stopPressed();
-      }
+    }
   }
 
   /// Provides the button that is used for starting and stopping the scan depending on the current _scanning value
   Widget buildButton(BuildContext context) {
-    return LargeRoundedButton(backgroundColor: _scanning ? Theme.of(context).disabledColor : Theme.of(context).colorScheme.secondary,
+    return LargeRoundedButton(
+      backgroundColor: _scanning
+          ? Theme.of(context).disabledColor
+          : Theme.of(context).colorScheme.secondary,
       buttonText: _scanning ? _buttonStringStop : _buttonStringStart,
-      textColor: _scanning ? Colors.white : Theme.of(context).colorScheme.onSecondary,
+      textColor:
+          _scanning ? Colors.white : Theme.of(context).colorScheme.onSecondary,
       onPressed: _scanning ? stopPressed : scanPressed,
     );
   }
@@ -125,7 +130,7 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void dispose() {
     // cancel all active scans and subscriptions
-    if(_scanning) {
+    if (_scanning) {
       flutterBlue.stopScan();
     }
     _scanResultsSubscription.cancel();
@@ -134,38 +139,35 @@ class _ScanPageState extends State<ScanPage> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        scrolledUnderElevation: 0,
         backgroundColor: backgroundColor,
-        automaticallyImplyLeading: true,
-        centerTitle: true,
-        title: Text(_title, style: appBarTextStyle,),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-              padding: const EdgeInsets.all(veryLargeSpacing),
-              child: buildButton(context)
+        appBar: AppBar(
+          scrolledUnderElevation: 0,
+          backgroundColor: backgroundColor,
+          automaticallyImplyLeading: true,
+          centerTitle: true,
+          title: Text(
+            _title,
+            style: appBarTextStyle,
           ),
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(smallSpacing),
-              child: DeviceListView(itemList: _scanResults,),
-            ),
-          ),
-        ]
-      )
-    );
+        ),
+        body: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                  padding: const EdgeInsets.all(veryLargeSpacing),
+                  child: buildButton(context)),
+              Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.all(smallSpacing),
+                  child: DeviceListView(
+                    itemList: _scanResults,
+                  ),
+                ),
+              ),
+            ]));
   }
 }
-
-
-
-

@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:chillout_hrm/widgets/double_box_row.dart';
-import 'package:chillout_hrm/widgets/evaluation_container.dart';
 import 'package:chillout_hrm/widgets/yoga_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:synchronized/synchronized.dart';
+
 import '../global.dart';
+import '../widgets/custom_dialog.dart';
 import '../widgets/error_snackbar_content.dart';
 
 /// Page displaying the heart rate and body temperature that is received by the cosinus device sensors
@@ -22,60 +23,62 @@ class TrackerPage extends StatefulWidget {
 }
 
 class _TrackerPageState extends State<TrackerPage> {
-
   // Strings used throughout the page
   final String _title = 'Body Tracker';
-  final String _headerTemperature = "Body Temperature";
-  final String _headerHeartRate = "Heart Rate";
+  final String _headerTracker = "Tracker";
+  final String _bpmString = 'BPM';
+  final String _targetHeartRate = 'Target Heart Rate';
+  final String _maxHeartRate = 'Max Heart Rate';
+  final String _headerRecommendation = "Recommendation";
   final String _connectedString = 'Connected';
   final String _connectingString = 'Connecting...';
   final String _disconnectedString = 'Disconnected';
+  final String _dialogContentTargetHeartRate =
+      'This is a certain percentage of the maximum heart rate based on how often you exercise.\n\nIf your goal is to lose weight then keeping your heart rate at this level would be ideal.';
+  final String _dialogContentMaxHeartRate =
+      'This is an estimation of what the maximum heart rate is that your body can handle.\n\nIt\'s calculated based on age, gender and how often you exercise.';
 
   // Error messages
-  final String _failedConnectionAttemptMessage = 'Failed to connect. Please check whether the earable device is currently active.';
-  final String _wrongDeviceMessage = 'The selected device does not provide the required services. Please choose a different device.';
+  final String _failedConnectionAttemptMessage =
+      'Failed to connect. Please check whether the earable device is currently active.';
+  final String _wrongDeviceMessage =
+      'The selected device does not provide the required services. Please choose a different device.';
 
   // header TextStyle
-  final TextStyle _headerTextStyle = const TextStyle(
-      color: Colors.white,
-      fontSize: 18
-  );
+  final TextStyle _headerTextStyle =
+      const TextStyle(color: Colors.white, fontSize: 20);
 
-  // variables storing current heart rate and average
+  // variables storing current heart rate and body temp
   double _heartRate = 0;
-  double _avgHeartRate = 0;
-
-  // variables storing current body temperature and average
   double _bodyTemp = 0;
-  double _avgBodyTemp = 0;
 
   //Streamsubscriptions & bluetooth related variables
   final int _maxAttempts = 2;
   int _connectionAttempts = 0;
   bool _keepReconnecting = true;
   BluetoothDeviceState _connectionState = BluetoothDeviceState.disconnected;
-  
+
   late StreamSubscription<BluetoothDeviceState> _connectionStateSubscription;
   StreamSubscription<List<int>>? _heartRateSubscription;
   StreamSubscription<List<int>>? _bodyTempSubscription;
 
   List<BluetoothService> _services = [];
 
-
   @override
   void initState() {
     super.initState();
 
-
     _connectionStateSubscription = widget.device.state.listen((state) async {
-      if(context.mounted) {
+      if (context.mounted) {
         setState(() {
           _connectionState = state;
         });
       }
 
       // if device is not connected and bluetooth is on, then we try to establish a connection
-      if (state == BluetoothDeviceState.disconnected  && _connectionAttempts < _maxAttempts && _keepReconnecting) {
+      if (state == BluetoothDeviceState.disconnected &&
+          _connectionAttempts < _maxAttempts &&
+          _keepReconnecting) {
         debugPrint('::: call _connectDevice :::');
         _connectDevice();
       }
@@ -90,7 +93,7 @@ class _TrackerPageState extends State<TrackerPage> {
     _services = [];
 
     // update state to connecting since this state is not emitted by the stream but we want to show it on the screen
-    if(context.mounted) {
+    if (context.mounted) {
       setState(() {
         _connectionState = BluetoothDeviceState.connecting;
       });
@@ -98,9 +101,12 @@ class _TrackerPageState extends State<TrackerPage> {
 
     // connect & handle timeout error
     debugPrint('::: connect called :::');
-    await widget.device.connect(autoConnect: false).timeout(const Duration(seconds: 15), onTimeout: () {
-      debugPrint('::: onTimeout: connect call timed out -> Device is most likely not available :::');
-      if(context.mounted) {
+    await widget.device
+        .connect(autoConnect: false)
+        .timeout(const Duration(seconds: 15), onTimeout: () {
+      debugPrint(
+          '::: onTimeout: connect call timed out -> Device is most likely not available :::');
+      if (context.mounted) {
         setState(() {
           _connectionState = BluetoothDeviceState.disconnected;
         });
@@ -122,7 +128,7 @@ class _TrackerPageState extends State<TrackerPage> {
       }
       await widget.device.disconnect();
       return;
-      }
+    }
 
     // subscribe to the necessary characteristics for reading the sensor data
     await subscribeToCharacteristics(_services);
@@ -138,21 +144,20 @@ class _TrackerPageState extends State<TrackerPage> {
   /// credits to https://github.com/teco-kit/cosinuss-flutter-new/blob/main/lib/main.dart
   /// code was taken from link above
   /// subscribes to the characteristics that provide heart rate and body temperature
-  Future<void> subscribeToCharacteristics(List<BluetoothService> services) async {
+  Future<void> subscribeToCharacteristics(
+      List<BluetoothService> services) async {
     // lock to sequentially call setNotifyValue(true) which prevents a bug in FlutterBlue which can cause a PlattformException
     var lock = Lock();
 
     for (BluetoothService service in services) {
-
       for (BluetoothCharacteristic c in service.characteristics) {
-
         switch (c.uuid.toString()) {
           case "00002a37-0000-1000-8000-00805f9b34fb":
             await lock.synchronized(() async {
               await c.setNotifyValue(true);
               await Future.delayed(const Duration(milliseconds: 300));
-              _heartRateSubscription = c.value.listen(
-                      (sensorData) => updateHeartRate(sensorData));
+              _heartRateSubscription =
+                  c.value.listen((sensorData) => updateHeartRate(sensorData));
               debugPrint('::: subscribed to heart rate :::');
             });
             break;
@@ -161,8 +166,9 @@ class _TrackerPageState extends State<TrackerPage> {
             await lock.synchronized(() async {
               await c.setNotifyValue(true);
               await Future.delayed(const Duration(milliseconds: 300));
-              _bodyTempSubscription = c.value.listen((sensorData) =>
-                  updateBodyTemperature(sensorData),);
+              _bodyTempSubscription = c.value.listen(
+                (sensorData) => updateBodyTemperature(sensorData),
+              );
               debugPrint('::: subscribed to body temperature :::');
             });
             break;
@@ -195,21 +201,21 @@ class _TrackerPageState extends State<TrackerPage> {
       return;
     }
 
-
     // based on GATT standard
     double temperature = twosComplimentOfNegativeMantissa(
-        ((sensorData[3] << 16) | (sensorData[2] << 8) | sensorData[1]) & 16777215) /
+            ((sensorData[3] << 16) | (sensorData[2] << 8) | sensorData[1]) &
+                16777215) /
         100.0;
     if ((flag & 1) != 0) {
       temperature = ((98.6 * temperature) - 32.0) *
           (5.0 / 9.0); // convert Fahrenheit to Celsius
     }
-    if(mounted) {
+    if (mounted) {
       setState(() {
-        _bodyTemp = temperature; //TODO add functionality to calc evaluation and average
+        _bodyTemp =
+            temperature; //TODO add functionality to calc evaluation and average
       });
     }
-
   }
 
   /// credits to https://github.com/teco-kit/cosinuss-flutter-new/blob/main/lib/main.dart
@@ -219,7 +225,7 @@ class _TrackerPageState extends State<TrackerPage> {
   void updateHeartRate(sensorData) {
     Uint8List bytes = Uint8List.fromList(sensorData);
 
-    if(bytes.isEmpty) return;
+    if (bytes.isEmpty) return;
 
     // based on GATT standard
     var bpm;
@@ -233,7 +239,7 @@ class _TrackerPageState extends State<TrackerPage> {
       bpm = (((bpm >> 8) & 0xFF) | ((bpm << 8) & 0xFF00));
     }
 
-    if(mounted) {
+    if (mounted) {
       setState(() {
         _heartRate = bpm.toDouble(); //adding a cast here
       });
@@ -254,42 +260,41 @@ class _TrackerPageState extends State<TrackerPage> {
         duration: const Duration(seconds: 10),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.errorContainer,
-        content: ErrorSnackbarContent(context: context, message: message,)
-    )
-    );
+        content: ErrorSnackbarContent(
+          context: context,
+          message: message,
+        )));
   }
 
   /// Build the text widget which displays the current state of the connection.
   Widget buildStateText(BuildContext context) {
     Color textColor;
     String displayText;
-    
+
     switch (_connectionState) {
       case BluetoothDeviceState.disconnected:
         textColor = Theme.of(context).colorScheme.error;
         displayText = _disconnectedString;
         break;
-      
+
       case BluetoothDeviceState.connecting:
         textColor = Theme.of(context).colorScheme.tertiary;
         displayText = _connectingString;
         break;
-        
+
       case BluetoothDeviceState.connected:
         textColor = Theme.of(context).colorScheme.secondary;
         displayText = _connectedString;
         break;
-        
+
       default:
         textColor = Colors.black;
         displayText = 'Unknown state';
-      
     }
     return Text(displayText,
         textAlign: TextAlign.center,
         style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: textColor));
+            fontSize: 16, fontWeight: FontWeight.bold, color: textColor));
   }
 
   @override
@@ -305,38 +310,37 @@ class _TrackerPageState extends State<TrackerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        // Appbar containing only a title
-        automaticallyImplyLeading: true,
-        centerTitle: true,
         backgroundColor: backgroundColor,
-        title: Text(_title,
-            style: appBarTextStyle
+        appBar: AppBar(
+          // Appbar containing only a title
+          automaticallyImplyLeading: true,
+          centerTitle: true,
+          backgroundColor: backgroundColor,
+          title: Text(_title, style: appBarTextStyle),
         ),
-      ),
-      body: Center(
-          child: Column(
-            // column containing the listview and the main container with all the tracking elements
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
+        body: Center(
+            child: Column(
+                // column containing the listview and the main container with all the tracking elements
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+              Expanded(
                   // contains the scrollable listView showing various yoga poses
                   flex: 4,
                   child: Padding(
-
-                    padding: const EdgeInsets.only(left: smallSpacing, top: largeSpacing, bottom: largeSpacing, right: smallSpacing),
-                    child: YogaListView()
-                  )
-                ),
-                const SizedBox(
-                  // Invisible box to add slightly more space between the top and bottom container
-                  height: largeSpacing,
-                ),
-                Expanded(
-                  // container with more than 60% of screen height containing the body tracking information
-                  flex: 9,
-                  child: Container(
+                      padding: const EdgeInsets.only(
+                          left: smallSpacing,
+                          top: largeSpacing,
+                          bottom: largeSpacing,
+                          right: smallSpacing),
+                      child: YogaListView())),
+              const SizedBox(
+                // Invisible box to add slightly more space between the top and bottom container
+                height: largeSpacing,
+              ),
+              Expanded(
+                // container with 60% of screen height containing the body tracking information
+                flex: 6,
+                child: Container(
                     // container wrapping all tracking elements for styling purposes
                     padding: const EdgeInsets.all(largeSpacing),
                     width: double.infinity,
@@ -344,73 +348,108 @@ class _TrackerPageState extends State<TrackerPage> {
                         color: Theme.of(context).colorScheme.secondary,
                         borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(veryLargeBorderRadius),
-                            topRight: Radius.circular(veryLargeBorderRadius))
-                    ),
+                            topRight: Radius.circular(veryLargeBorderRadius))),
                     child: Column(
                       // main column of the tracking elements
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(left: veryLargeSpacing, right: veryLargeSpacing),
-                          child: Row(
-                            // contains the connection state text and reset button
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          // padding of status bar
+                          padding: const EdgeInsets.only(
+                              left: 2 * veryLargeSpacing,
+                              right: 2 * veryLargeSpacing),
+                          child: Container(
+                            // status bar for current connection status
+                            padding: const EdgeInsets.all(largeSpacing),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                                color: backgroundColor,
+                                borderRadius:
+                                    BorderRadius.circular(regularBorderRadius)),
+                            child: buildStateText(context),
+                          ),
+                        ),
+                        Column(
+                          // contains tracking elements for current heart rate and body temp + section header
+                          children: [
+                            Text(
+                              _headerTracker,
+                              style: _headerTextStyle,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(
+                              height: smallSpacing,
+                            ),
+                            DoubleBoxRow(
+                              leftTopText: 'Heart Rate',
+                              leftValue: _heartRate,
+                              leftBottomText: _bpmString,
+                              rightTopText: 'Body Temperature',
+                              rightValue: _bodyTemp,
+                              rightBottomText: 'Celsius',
+                            ),
+                          ],
+                        ),
+                        Column(
+                          // contains the section header, the display elements for target and max heart rate and the row for the info buttons
+                          children: [
+                            Text(
+                              _headerRecommendation,
+                              style: _headerTextStyle,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: smallSpacing),
+                            DoubleBoxRow(
+                              leftValue: 0,
+                              rightValue: 0,
+                              leftBottomText: _bpmString,
+                              leftTopText: _targetHeartRate,
+                              rightTopText: _maxHeartRate,
+                              rightBottomText: _bpmString,
+                            ),
+                            const SizedBox(
+                              height: largeSpacing,
+                            ),
+                            Row(
+                              // contains the two information buttons
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Expanded(
-                                  flex: 3,
-                                  child: Container(
-                                    // status bar for current connection status
-                                    padding: const EdgeInsets.all(largeSpacing),
-                                      decoration: BoxDecoration(
-                                        color: backgroundColor,
-                                        borderRadius: BorderRadius.circular(smallBorderRadius)
-                                      ),
-                                      child: buildStateText(context),
-                                  )
+                                  // expanded to force equal size
+                                  flex: 1,
+                                  child: ElevatedButton(
+                                      // button which when pressed shows a dialog that explains the target heart rate
+                                      onPressed: () => showDialog(
+                                          context: context,
+                                          builder: (context) => CustomDialog(
+                                              titleText: _targetHeartRate,
+                                              contentText:
+                                                  _dialogContentTargetHeartRate)),
+                                      child: const Icon(Icons.info_outline)),
                                 ),
                                 const SizedBox(
-                                  // box for extra space between buttons
                                   width: largeSpacing,
                                 ),
                                 Expanded(
-                                  flex: 2,
+                                  // expanded to force equal size
+                                  flex: 1,
                                   child: ElevatedButton(
-                                    // button to reset the current averages
-                                    onPressed: () {
-                                      setState(() {
-                                        _avgHeartRate = 0;
-                                        _avgBodyTemp = 0;
-                                      });
-                                    },
-                                    child: const Text("Reset Avg."),
-                                  ),
+                                      // button which when pressed shows a dialog explaining the max heart rate
+                                      onPressed: () => showDialog(
+                                          context: context,
+                                          builder: (context) => CustomDialog(
+                                              titleText: _maxHeartRate,
+                                              contentText:
+                                                  _dialogContentMaxHeartRate)),
+                                      child: const Icon(Icons.info_outline)),
                                 ),
-                              ]
-                          ),
+                              ],
+                            )
+                          ],
                         ),
-                        Text(_headerTemperature,
-                          style: _headerTextStyle,
-                          textAlign: TextAlign.center,
-                        ),
-                        DoubleBoxRow(currentValue: _bodyTemp, avgValue: _avgBodyTemp, unitString: 'Celsius'),
-                        EvaluationContainer(evalString: 'This is the evaluation of the current temp and average temperature',),
-                        const SizedBox(
-                          height: smallSpacing,
-                        ),
-                        Text(_headerHeartRate,
-                          style: _headerTextStyle,
-                          textAlign: TextAlign.center,
-                        ),
-                        DoubleBoxRow(currentValue: _heartRate, avgValue: _avgHeartRate, unitString: 'BPM'),
-                        EvaluationContainer(evalString: 'This is the evaluation of the current heart rate and average heart rate')
                       ],
-                    )
-                ),
-                )
-              ]
-          )
-      )
-    );
+                    )),
+              )
+            ])));
   }
 }
-

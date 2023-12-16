@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 final TextStyle appBarTextStyle =  TextStyle(
   color: Colors.grey.shade800,
   fontFamily: 'Parisienne',
-  fontSize: 38.0,
+  fontSize: 37.0,
   fontWeight: FontWeight.bold
 );
 

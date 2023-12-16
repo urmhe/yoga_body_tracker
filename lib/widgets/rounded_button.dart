@@ -1,3 +1,4 @@
+import 'package:chillout_hrm/global.dart';
 import 'package:flutter/material.dart';
 
 /// This is a large rounded button which can be reused. The button is prestyled but offers the ability to define the background color,
@@ -12,16 +13,15 @@ class LargeRoundedButton extends StatelessWidget {
     required this.onPressed,
   });
 
-  // Values that are passed to ElevatedButton
   final Color backgroundColor;
   final String buttonText;
   final Color textColor;
   final VoidCallback onPressed;
 
   // Elements used for styling
-  static const double _paddingVal = 12.0;
-  static const double _fontsize = 21.5;
-  static const double _minHeight = 50.0;
+  static const double _fontsize = 22;
+  static const double _minHeight = 45.0;
+  static const double _paddingSize = 10.0;
 
 
   @override
@@ -31,7 +31,7 @@ class LargeRoundedButton extends StatelessWidget {
         style: ButtonStyle(
             minimumSize: const MaterialStatePropertyAll<Size>(Size.fromHeight(_minHeight)),
             backgroundColor: MaterialStatePropertyAll<Color>(backgroundColor),
-            padding: const MaterialStatePropertyAll<EdgeInsetsGeometry>(EdgeInsets.all(_paddingVal))
+            padding: const MaterialStatePropertyAll<EdgeInsetsGeometry>(EdgeInsets.all(_paddingSize))
         ),
         child: Text(buttonText,
           style: TextStyle(color: textColor, fontSize: _fontsize),)

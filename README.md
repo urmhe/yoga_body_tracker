@@ -1,16 +1,21 @@
-# chillout_hrm
+# YogaBodyTracker
 
-A new Flutter project.
+A lifestyle app which uses a cosinus earable device to track heart rate and body temperature while doing yoga.
 
-## Getting Started
+## Disclaimer
 
-This project is a starting point for a Flutter application.
+The app uses the FlutterBlue package so any device with an android version of >10 is not supported.
+Even though FlutterBluePlus supports newer versions of android, it is unable to receive some of the sensor data like heart rate and body temperature reliably.
+This is the reason why FlutterBlue was chosen instead as it can connect and provide the sensor data of the cosinus device without the above mentioned issues.
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Getting started
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+To use the app you need the following:
+- Cosinus one earable
+- Smartphone with Bluetooth Low Energy(BLE) functionality
+- Android version <= 10 (API-Level 29)
+
+If the 3 criteria mentioned above are met, then you should be able to use the app without any issues.
+
+Have fun exercising!

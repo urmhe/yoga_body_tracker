@@ -5,7 +5,8 @@ import 'package:chillout_hrm/widgets/double_box_row.dart';
 import 'package:chillout_hrm/widgets/evaluation_container.dart';
 import 'package:chillout_hrm/widgets/yoga_list_view.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue/flutter_blue.dart';
+import 'package:synchronized/synchronized.dart';
 import '../global.dart';
 import '../widgets/error_snackbar_content.dart';
 
@@ -29,12 +30,10 @@ class _TrackerPageState extends State<TrackerPage> {
   final String _connectedString = 'Connected';
   final String _connectingString = 'Connecting...';
   final String _disconnectedString = 'Disconnected';
-  static const String _heartRateCharacteristic = "00002a37-0000-1000-8000-00805f9b34fb";
-  static const String _bodyTempCharacteristic = "00002a1c-0000-1000-8000-00805f9b34fb";
 
   // Error messages
-  final String _tooManyFailedConnectionAttemptsMessage = 'There were too many failed connection attempts. Check earable device and then try reconnecting.';
-  final String _wrongDeviceMessage = 'The selected device does not provide the required service. Please choose a different device.';
+  final String _failedConnectionAttemptMessage = 'Failed to connect. Please check whether the earable device is currently active.';
+  final String _wrongDeviceMessage = 'The selected device does not provide the required services. Please choose a different device.';
 
   // header TextStyle
   final TextStyle _headerTextStyle = const TextStyle(
@@ -51,27 +50,33 @@ class _TrackerPageState extends State<TrackerPage> {
   double _avgBodyTemp = 0;
 
   //Streamsubscriptions & bluetooth related variables
+  final int _maxAttempts = 2;
   int _connectionAttempts = 0;
   bool _keepReconnecting = true;
-  BluetoothConnectionState _connectionState = BluetoothConnectionState.disconnected;
+  BluetoothDeviceState _connectionState = BluetoothDeviceState.disconnected;
   
-  late StreamSubscription<BluetoothConnectionState> _connectionStateSubscription;
+  late StreamSubscription<BluetoothDeviceState> _connectionStateSubscription;
   StreamSubscription<List<int>>? _heartRateSubscription;
   StreamSubscription<List<int>>? _bodyTempSubscription;
 
   List<BluetoothService> _services = [];
 
+
   @override
   void initState() {
     super.initState();
 
-    _connectionStateSubscription = widget.device.connectionState.listen((BluetoothConnectionState state) async {
-      setState(() {
-        _connectionState = state;
-      });
+
+    _connectionStateSubscription = widget.device.state.listen((state) async {
+      if(context.mounted) {
+        setState(() {
+          _connectionState = state;
+        });
+      }
 
       // if device is not connected and bluetooth is on, then we try to establish a connection
-      if (state == BluetoothConnectionState.disconnected  && _connectionAttempts < 3 && _keepReconnecting) {
+      if (state == BluetoothDeviceState.disconnected  && _connectionAttempts < _maxAttempts && _keepReconnecting) {
+        debugPrint('::: call _connectDevice :::');
         _connectDevice();
       }
     });
@@ -83,25 +88,27 @@ class _TrackerPageState extends State<TrackerPage> {
   void _connectDevice() async {
     // service always have to be rediscovered on every connection attempt
     _services = [];
-    setState(() {
-      // manually set state to connecting since it is not emitted by ios or android
-      _connectionState = BluetoothConnectionState.connecting;
-    });
 
-    // connect
-    try {
-      await widget.device.connect(
-        timeout: const Duration(seconds: 20),
-      );
-    } catch (e) {
-      // on failure the app will try reconnecting
-      _connectionAttempts++;
-      if (!(_connectionAttempts < 3)) {
-        showSnackBarError(_tooManyFailedConnectionAttemptsMessage);
-      }
-      await Future.delayed(const Duration(milliseconds: 300));
-      return;
+    // update state to connecting since this state is not emitted by the stream but we want to show it on the screen
+    if(context.mounted) {
+      setState(() {
+        _connectionState = BluetoothDeviceState.connecting;
+      });
     }
+
+    // connect & handle timeout error
+    debugPrint('::: connect called :::');
+    await widget.device.connect(autoConnect: false).timeout(const Duration(seconds: 15), onTimeout: () {
+      debugPrint('::: onTimeout: connect call timed out -> Device is most likely not available :::');
+      if(context.mounted) {
+        setState(() {
+          _connectionState = BluetoothDeviceState.disconnected;
+        });
+      }
+      showSnackBarError(_failedConnectionAttemptMessage);
+      return;
+    });
+    debugPrint(':::::::: done connecting :::::::::::');
 
     // find services
     try {
@@ -110,8 +117,8 @@ class _TrackerPageState extends State<TrackerPage> {
       // if services cannot be discovered, then we disconnect from device which will trigger a reconnect.
       // This counts as a failed attempt at connecting for the purpose of the app
       _connectionAttempts++;
-      if (!(_connectionAttempts < 3)) {
-        showSnackBarError(_tooManyFailedConnectionAttemptsMessage);
+      if (!(_connectionAttempts < _maxAttempts)) {
+        showSnackBarError(_failedConnectionAttemptMessage);
       }
       await widget.device.disconnect();
       return;
@@ -132,23 +139,32 @@ class _TrackerPageState extends State<TrackerPage> {
   /// code was taken from link above
   /// subscribes to the characteristics that provide heart rate and body temperature
   Future<void> subscribeToCharacteristics(List<BluetoothService> services) async {
-    for (var service in services) {
-      for (var characteristic in service.characteristics) {
-        switch (characteristic.uuid.toString()) {
+    // lock to sequentially call setNotifyValue(true) which prevents a bug in FlutterBlue which can cause a PlattformException
+    var lock = Lock();
 
-          case _heartRateCharacteristic:
-            _heartRateSubscription = characteristic.lastValueStream.listen(
-            (sensorData) => updateHeartRate(sensorData));
-            await characteristic.setNotifyValue(true);
-            // delay to prevent BLE from crashing
-            await Future.delayed(const Duration(seconds: 2));
+    for (BluetoothService service in services) {
+
+      for (BluetoothCharacteristic c in service.characteristics) {
+
+        switch (c.uuid.toString()) {
+          case "00002a37-0000-1000-8000-00805f9b34fb":
+            await lock.synchronized(() async {
+              await c.setNotifyValue(true);
+              await Future.delayed(const Duration(milliseconds: 300));
+              _heartRateSubscription = c.value.listen(
+                      (sensorData) => updateHeartRate(sensorData));
+              debugPrint('::: subscribed to heart rate :::');
+            });
             break;
 
-          case _bodyTempCharacteristic:
-            _bodyTempSubscription = characteristic.lastValueStream.listen((sensorData) => updateBodyTemperature(sensorData),);
-            await characteristic.setNotifyValue(true);
-            // delay to prevent BLE from crashing
-            await Future.delayed(const Duration(seconds: 2));
+          case "00002a1c-0000-1000-8000-00805f9b34fb":
+            await lock.synchronized(() async {
+              await c.setNotifyValue(true);
+              await Future.delayed(const Duration(milliseconds: 300));
+              _bodyTempSubscription = c.value.listen((sensorData) =>
+                  updateBodyTemperature(sensorData),);
+              debugPrint('::: subscribed to body temperature :::');
+            });
             break;
 
           default:
@@ -169,9 +185,16 @@ class _TrackerPageState extends State<TrackerPage> {
 
   /// credits to https://github.com/teco-kit/cosinuss-flutter-new/blob/main/lib/main.dart
   /// Most of the code was taken from the file above.
-  /// Additional functionality was added so that the average body temp and the evaluation are calculated
+  /// Additional functionality was added so that the average body temp and the evaluation are calculated.
+  /// [sensorData] is the raw data that is received from the earable.
   void updateBodyTemperature(sensorData) {
-    var flag = sensorData[0];
+    var flag;
+    try {
+      flag = sensorData[0];
+    } on RangeError catch (e) {
+      return;
+    }
+
 
     // based on GATT standard
     double temperature = twosComplimentOfNegativeMantissa(
@@ -181,29 +204,44 @@ class _TrackerPageState extends State<TrackerPage> {
       temperature = ((98.6 * temperature) - 32.0) *
           (5.0 / 9.0); // convert Fahrenheit to Celsius
     }
+    if(mounted) {
+      setState(() {
+        _bodyTemp = temperature; //TODO add functionality to calc evaluation and average
+      });
+    }
 
-    setState(() {
-      _bodyTemp = temperature; //TODO add functionality to calc evaluation and average
-    });
   }
 
   /// credits to https://github.com/teco-kit/cosinuss-flutter-new/blob/main/lib/main.dart
   /// Most of the code was taken from the file above.
   /// Additional functionality was added so that the average body temp and the evaluation are calculated
+  /// [sensorData] is the raw data that is received from the earable.
   void updateHeartRate(sensorData) {
     Uint8List bytes = Uint8List.fromList(sensorData);
 
+    if(bytes.isEmpty) return;
+
     // based on GATT standard
-    var bpm = bytes[1];
+    var bpm;
+    try {
+      bpm = bytes[1];
+    } on RangeError catch (e) {
+      return;
+    }
+
     if (!((bytes[0] & 0x01) == 0)) {
       bpm = (((bpm >> 8) & 0xFF) | ((bpm << 8) & 0xFF00));
     }
-    setState(() {
-      _heartRate = bpm as double; //TODO add functionality to calc average and evaluation
-    });
+
+    if(mounted) {
+      setState(() {
+        _heartRate = bpm.toDouble(); //adding a cast here
+      });
+    }
   }
 
-  /// Async method for showing an error snackbar at the bottom of the screen
+  /// Async method for showing an error snackbar at the bottom of the screen.
+  /// [message] is the Text that is displayed in the snackbar.
   Future showSnackBarError(String message) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -221,23 +259,23 @@ class _TrackerPageState extends State<TrackerPage> {
     );
   }
 
-  /// Build the text widget which displays the current state of the connection
+  /// Build the text widget which displays the current state of the connection.
   Widget buildStateText(BuildContext context) {
     Color textColor;
     String displayText;
     
     switch (_connectionState) {
-      case BluetoothConnectionState.disconnected:
+      case BluetoothDeviceState.disconnected:
         textColor = Theme.of(context).colorScheme.error;
         displayText = _disconnectedString;
         break;
       
-      case BluetoothConnectionState.connecting:
+      case BluetoothDeviceState.connecting:
         textColor = Theme.of(context).colorScheme.tertiary;
         displayText = _connectingString;
         break;
         
-      case BluetoothConnectionState.connected:
+      case BluetoothDeviceState.connected:
         textColor = Theme.of(context).colorScheme.secondary;
         displayText = _connectedString;
         break;
@@ -257,10 +295,10 @@ class _TrackerPageState extends State<TrackerPage> {
   @override
   void dispose() {
     // cancel all subscriptions before leaving this page
-    widget.device.disconnect();
     _connectionStateSubscription.cancel();
     _heartRateSubscription?.cancel();
     _bodyTempSubscription?.cancel();
+    widget.device.disconnect();
     super.dispose();
   }
 

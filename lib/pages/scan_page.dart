@@ -5,14 +5,19 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../global.dart';
+import '../util/user_data.dart';
 import '../widgets/device_list_view.dart';
 import '../widgets/error_snackbar_content.dart';
 import '../widgets/rounded_button.dart';
 
-/// Scan page scans for available bluetooth devices and lists them in a listView
+/// Scan page - scans for available bluetooth devices and lists them in a listView
 /// User can choose to connect to one of the available devices
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key});
+
+  const ScanPage({super.key, required this.userData});
+
+  // data object containing the information that user provided on home screen
+  final UserData userData;
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -103,6 +108,7 @@ class _ScanPageState extends State<ScanPage> {
 
   /// Start scanning and show error message if a problem occurs
   Future scanPressed() async {
+    // on request location permission when first using the app
     await Permission.location.request();
 
     // try starting the scan for device and show error snackbar in case of an error
@@ -157,14 +163,17 @@ class _ScanPageState extends State<ScanPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
+                // contains the scan button
                   padding: const EdgeInsets.all(veryLargeSpacing),
                   child: buildButton(context)),
               Expanded(
+                // expand listview so that it takes up the rest of the screen
                 flex: 1,
                 child: Padding(
                   padding: const EdgeInsets.all(smallSpacing),
                   child: DeviceListView(
                     itemList: _scanResults,
+                    userData: widget.userData,
                   ),
                 ),
               ),

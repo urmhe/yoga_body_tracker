@@ -8,15 +8,29 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../global.dart';
+import '../util/user_data.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/error_snackbar_content.dart';
 
 /// Page displaying the heart rate and body temperature that is received by the cosinus device sensors
 /// as well as a listview of yoga exercises
 class TrackerPage extends StatefulWidget {
+  // device chosen by user
   final BluetoothDevice device;
 
-  const TrackerPage({super.key, required this.device});
+  // object containing information about user
+  final UserData userData;
+
+  // calculated based on userData
+  late final double _targetHeartRate;
+  late final double _maxHeartRate;
+
+  // standard constructor which also initializes target and max heart rate
+  TrackerPage({super.key, required this.device, required this.userData}) {
+    UserLimitEstimator eval = UserLimitEstimator(userData: userData);
+    _targetHeartRate = eval.targetHeartRate;
+    _maxHeartRate = eval.maxHeartRate;
+  }
 
   @override
   State<TrackerPage> createState() => _TrackerPageState();
@@ -79,7 +93,6 @@ class _TrackerPageState extends State<TrackerPage> {
       if (state == BluetoothDeviceState.disconnected &&
           _connectionAttempts < _maxAttempts &&
           _keepReconnecting) {
-        debugPrint('::: call _connectDevice :::');
         _connectDevice();
       }
     });
@@ -100,12 +113,23 @@ class _TrackerPageState extends State<TrackerPage> {
     }
 
     // connect & handle timeout error
-    debugPrint('::: connect called :::');
-    await widget.device
-        .connect(autoConnect: false)
-        .timeout(const Duration(seconds: 15), onTimeout: () {
-      debugPrint(
-          '::: onTimeout: connect call timed out -> Device is most likely not available :::');
+    // timeout must be handled specifically to avoid FlutterBlue bug which triggers an unhandled TimeoutException
+    // despite having a try catch block
+
+    try {
+      await widget.device
+          .connect(autoConnect: false)
+          .timeout(const Duration(seconds: 15), onTimeout: () {
+        if (context.mounted) {
+          setState(() {
+            _connectionState = BluetoothDeviceState.disconnected;
+          });
+        }
+        showSnackBarError(_failedConnectionAttemptMessage);
+        return;
+      });
+    } catch (e) {
+      // if connection goes wrong then then we show error showing that connection failed
       if (context.mounted) {
         setState(() {
           _connectionState = BluetoothDeviceState.disconnected;
@@ -113,8 +137,7 @@ class _TrackerPageState extends State<TrackerPage> {
       }
       showSnackBarError(_failedConnectionAttemptMessage);
       return;
-    });
-    debugPrint(':::::::: done connecting :::::::::::');
+    }
 
     // find services
     try {
@@ -158,7 +181,6 @@ class _TrackerPageState extends State<TrackerPage> {
               await Future.delayed(const Duration(milliseconds: 300));
               _heartRateSubscription =
                   c.value.listen((sensorData) => updateHeartRate(sensorData));
-              debugPrint('::: subscribed to heart rate :::');
             });
             break;
 
@@ -169,7 +191,6 @@ class _TrackerPageState extends State<TrackerPage> {
               _bodyTempSubscription = c.value.listen(
                 (sensorData) => updateBodyTemperature(sensorData),
               );
-              debugPrint('::: subscribed to body temperature :::');
             });
             break;
 
@@ -400,8 +421,8 @@ class _TrackerPageState extends State<TrackerPage> {
                             ),
                             const SizedBox(height: smallSpacing),
                             DoubleBoxRow(
-                              leftValue: 0,
-                              rightValue: 0,
+                              leftValue: widget._targetHeartRate,
+                              rightValue: widget._maxHeartRate,
                               leftBottomText: _bpmString,
                               leftTopText: _targetHeartRate,
                               rightTopText: _maxHeartRate,

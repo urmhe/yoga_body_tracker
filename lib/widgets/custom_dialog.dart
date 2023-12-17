@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Prestyled AlertDialog widget for displaying information
+/// Prestyled AlertDialog widget for displaying information.
 class CustomDialog extends StatelessWidget {
   const CustomDialog({
     super.key,
@@ -17,16 +17,19 @@ class CustomDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       elevation: 0,
       title: Text(titleText),
-      content: Text(contentText,
-        textAlign: TextAlign.center,),
+      content: Text(
+        contentText,
+        textAlign: TextAlign.center,
+      ),
       contentTextStyle: const TextStyle(fontSize: 16, color: Colors.black),
-
-      icon: Icon(Icons.info_outline,
-        color: Theme.of(context).colorScheme.primary,),
-      actions: <Widget> [
+      icon: Icon(
+        Icons.info_outline,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      actions: <Widget>[
         TextButton(
-          onPressed:() => Navigator.pop(context),
-          child:const Text('OK', style: TextStyle(fontSize: 17)),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('OK', style: TextStyle(fontSize: 17)),
         )
       ],
     );

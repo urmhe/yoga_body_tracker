@@ -27,5 +27,4 @@ const double veryLargeSpacing = 16.0;
 
 // Route Strings
 const String homeRoute = 'home';
-const String scanRoute = 'scanPage';
 

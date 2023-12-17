@@ -1,10 +1,8 @@
-
-
-import 'package:chillout_hrm/pages/scan_page.dart';
-import 'package:flutter/material.dart';
-import 'pages/home_page.dart';
 import 'package:chillout_hrm/global.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'pages/home_page.dart';
 
 void main() {
   // Lock device in landscape mode
@@ -37,7 +35,6 @@ class MyApp extends StatelessWidget {
       initialRoute: homeRoute,
       routes: {
         homeRoute: (context) => const HomePage(),
-        scanRoute: (context) => const ScanPage(),
       },
     );
   }

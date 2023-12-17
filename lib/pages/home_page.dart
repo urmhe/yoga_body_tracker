@@ -1,3 +1,4 @@
+import 'package:chillout_hrm/pages/scan_page.dart';
 import 'package:chillout_hrm/util/enum.dart';
 import 'package:chillout_hrm/widgets/error_snackbar_content.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  static const double _disclaimerFontSize = 17.5;
+  static const double _disclaimerFontSize = 17;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -24,14 +25,14 @@ class _HomePageState extends State<HomePage> {
 
   // Strings used throughout the page
   final String _disclaimerText =
-      "To use the app, please make sure that your cosinus earable is active and bluetooth is enabled on your device.";
+      "To use the app, please make sure to keep bluetooth on at all times";
   final String _startButtonText = "Get started";
   final String _sexDropDownHint = 'What is your sex?';
   final String _exerciseFrequencyDropDownHint = 'How often do you exercise?';
 
   // error messages
-  final String _errorBluetoothOff = 'Please turn on bluetooth';
-  final String _errorBtNotSupported = 'This device does not support bluetooth';
+  final String _errorBluetoothOff = 'Please turn on bluetooth.';
+  final String _errorBtNotSupported = 'This device does not support bluetooth.';
   final String _dataMissing = 'Please fill out all fields.';
 
   // user input
@@ -59,7 +60,7 @@ class _HomePageState extends State<HomePage> {
       // after await check if context is still valid and proceed only if it is
       if (await FlutterBlue.instance.isOn) {
         if (!context.mounted) return;
-        Navigator.pushNamed(context, scanRoute);
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ScanPage(userData: user)));
       } else {
         showSnackBarError(_errorBluetoothOff);
       }
@@ -91,7 +92,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // home page
+      // home page scaffold
       backgroundColor: backgroundColor,
       appBar: AppBar(
         // Appbar containing only a title

@@ -2,11 +2,14 @@ import 'package:chillout_hrm/pages/body_tracker_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
+import '../util/user_data.dart';
+
 /// Listview containing tiles for each bluetooth device that is found by the bluetooth scan
 class DeviceListView extends StatelessWidget {
-  const DeviceListView({super.key, required this.itemList});
+  const DeviceListView({super.key, required this.itemList, required this.userData});
 
   final List<ScanResult> itemList;
+  final UserData userData;
 
   // attributes & strings used for styling
   final double _fontSize = 16;
@@ -17,7 +20,7 @@ class DeviceListView extends StatelessWidget {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => TrackerPage(device: itemList[index].device)));
+            builder: (context) => TrackerPage(device: itemList[index].device, userData: userData,)));
   }
 
   @override

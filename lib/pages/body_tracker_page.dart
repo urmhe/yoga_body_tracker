@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
+import 'package:chillout_hrm/pages/timer_picker_sheet.dart';
 import 'package:chillout_hrm/widgets/double_box_row.dart';
 import 'package:chillout_hrm/widgets/yoga_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../global.dart';
@@ -78,10 +81,18 @@ class _TrackerPageState extends State<TrackerPage> {
 
   List<BluetoothService> _services = [];
 
+  // timer related attributes
+  bool _timerButtonsActive = false;
+  Duration _timerDuration = const Duration();
+
+  // Audioplayer for playing sound when timer runs out
+  final AudioPlayer _player = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
 
+    // subscribe to device state
     _connectionStateSubscription = widget.device.state.listen((state) async {
       if (context.mounted) {
         setState(() {
@@ -233,8 +244,7 @@ class _TrackerPageState extends State<TrackerPage> {
     }
     if (mounted) {
       setState(() {
-        _bodyTemp =
-            temperature; //TODO add functionality to calc evaluation and average
+        _bodyTemp = temperature;
       });
     }
   }
@@ -270,7 +280,7 @@ class _TrackerPageState extends State<TrackerPage> {
   /// Async method for showing an error snackbar at the bottom of the screen.
   /// [message] is the Text that is displayed in the snackbar.
   Future showSnackBarError(String message) async {
-    if (!context.mounted) return;
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(),
@@ -285,6 +295,23 @@ class _TrackerPageState extends State<TrackerPage> {
           context: context,
           message: message,
         )));
+  }
+
+  /// Build a button that resets the timer when timer is active.
+  /// When no timer is active then the button does nothing.
+  ElevatedButton buildResetButton() {
+    return ElevatedButton(
+        onPressed: _timerButtonsActive
+            ? () {
+                setState(() {
+                  _timerButtonsActive = false;
+                });
+              }
+            : () {},
+        child: Icon(Icons.timer_off,
+            color: _timerButtonsActive
+                ? Theme.of(context).primaryColor
+                : Colors.grey));
   }
 
   /// Build the text widget which displays the current state of the connection.
@@ -321,10 +348,13 @@ class _TrackerPageState extends State<TrackerPage> {
   @override
   void dispose() {
     // cancel all subscriptions before leaving this page
+    if (_connectionState != BluetoothDeviceState.disconnected) {
+      widget.device.disconnect();
+    }
     _connectionStateSubscription.cancel();
     _heartRateSubscription?.cancel();
     _bodyTempSubscription?.cancel();
-    widget.device.disconnect();
+    _player.dispose();
     super.dispose();
   }
 
@@ -346,7 +376,7 @@ class _TrackerPageState extends State<TrackerPage> {
                 children: [
               Expanded(
                   // contains the scrollable listView showing various yoga poses
-                  flex: 4,
+                  flex: 1,
                   child: Padding(
                       padding: const EdgeInsets.only(
                           left: smallSpacing,
@@ -359,8 +389,8 @@ class _TrackerPageState extends State<TrackerPage> {
                 height: largeSpacing,
               ),
               Expanded(
-                // container with 60% of screen height containing the body tracking information
-                flex: 6,
+                // container with more than 60% of screen height containing the body tracking information
+                flex: 2,
                 child: Container(
                     // container wrapping all tracking elements for styling purposes
                     padding: const EdgeInsets.all(largeSpacing),
@@ -381,14 +411,85 @@ class _TrackerPageState extends State<TrackerPage> {
                               right: 2 * veryLargeSpacing),
                           child: Container(
                             // status bar for current connection status
-                            padding: const EdgeInsets.all(largeSpacing),
+                            padding: const EdgeInsets.all(smallSpacing),
                             width: double.infinity,
                             decoration: BoxDecoration(
                                 color: backgroundColor,
                                 borderRadius:
-                                    BorderRadius.circular(regularBorderRadius)),
+                                    BorderRadius.circular(smallBorderRadius)),
                             child: buildStateText(context),
                           ),
+                        ),
+                        Row(
+                          // contains all the timer elements
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              // expand to make timer button take up remaining space
+                              flex: 1,
+                              child: ElevatedButton(
+                                // wrap timer with button so that we can open timer picker sheet
+                                onPressed: () async {
+                                  setState(() {
+                                    _timerButtonsActive = false;
+                                  });
+                                  Duration timer = await showModalBottomSheet(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              const TimerPickerSheet()) ?? const Duration();
+                                  // if we have a timer > 0 and context is still valid then we update the timer
+                                  if (timer > const Duration()) {
+                                    if (mounted) {
+                                      setState(() {
+                                        _timerButtonsActive = true;
+                                        _timerDuration = timer;
+                                      });
+                                    }
+                                  }
+                                },
+                                child: _timerButtonsActive
+                                    ? TimerCountdown(
+                                        onEnd: () async {
+                                          setState(() {
+                                            _timerButtonsActive = false;
+                                          });
+                                          await _player.play(
+                                            AssetSource(
+                                                'sounds/simple-notification.mp3'),
+                                          );
+                                          if (mounted) {
+                                            showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    const CustomDialog(
+                                                        titleText: 'Finished!',
+                                                        contentText:
+                                                            'Your timer has hit 0.'));
+                                          }
+                                        },
+                                        colonsTextStyle: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                        timeTextStyle: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold),
+                                        enableDescriptions: false,
+                                        endTime:
+                                            DateTime.now().add(_timerDuration),
+                                        format: CountDownTimerFormat
+                                            .hoursMinutesSeconds,
+                                      )
+                                    : Text('Set Timer',
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            color: Theme.of(context)
+                                                .primaryColor)),
+                              ),
+                            ),
+                            const SizedBox(width: largeSpacing),
+                            Expanded(flex: 1, child: buildResetButton())
+                          ],
                         ),
                         Column(
                           // contains tracking elements for current heart rate and body temp + section header
@@ -446,7 +547,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                               titleText: _targetHeartRate,
                                               contentText:
                                                   _dialogContentTargetHeartRate)),
-                                      child: const Icon(Icons.info_outline)),
+                                      child: const Icon(Icons.info)),
                                 ),
                                 const SizedBox(
                                   width: largeSpacing,
@@ -462,7 +563,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                               titleText: _maxHeartRate,
                                               contentText:
                                                   _dialogContentMaxHeartRate)),
-                                      child: const Icon(Icons.info_outline)),
+                                      child: const Icon(Icons.info)),
                                 ),
                               ],
                             )

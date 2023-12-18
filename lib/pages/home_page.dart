@@ -2,11 +2,12 @@ import 'package:chillout_hrm/pages/scan_page.dart';
 import 'package:chillout_hrm/util/enum.dart';
 import 'package:chillout_hrm/widgets/error_snackbar_content.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:numberpicker/numberpicker.dart';
+
+import '../global.dart';
 import '../util/user_data.dart';
 import '../widgets/rounded_button.dart';
-import '../global.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 
 /// Landingpage of the App which provides some information about how to use the app and offer navigation to bluetooth devices
 /// as well as to the body tracking page
@@ -60,7 +61,8 @@ class _HomePageState extends State<HomePage> {
       // after await check if context is still valid and proceed only if it is
       if (await FlutterBlue.instance.isOn) {
         if (!context.mounted) return;
-        Navigator.push(context, MaterialPageRoute(builder: (context) => ScanPage(userData: user)));
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => ScanPage(userData: user)));
       } else {
         showSnackBarError(_errorBluetoothOff);
       }
@@ -170,6 +172,9 @@ class _HomePageState extends State<HomePage> {
                 // column which contains the age picker and its subtext
                 children: [
                   NumberPicker(
+                    selectedTextStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 25),
                     axis: Axis.horizontal,
                     step: 1,
                     minValue: 10,

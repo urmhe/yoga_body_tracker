@@ -63,7 +63,7 @@ class _TrackerPageState extends State<TrackerPage> {
 
   // header TextStyle
   final TextStyle _headerTextStyle =
-      const TextStyle(color: Colors.white, fontSize: 20);
+      const TextStyle(color: Colors.white, fontSize: 21);
 
   // current heart rate and body temp
   double _heartRate = 0;
@@ -364,214 +364,233 @@ class _TrackerPageState extends State<TrackerPage> {
         backgroundColor: backgroundColor,
         appBar: AppBar(
           // Appbar containing only a title
+          scrolledUnderElevation: 0,
           automaticallyImplyLeading: true,
           centerTitle: true,
           backgroundColor: backgroundColor,
           title: Text(_title, style: appBarTextStyle),
         ),
         body: Center(
-            child: Column(
-                // column containing the listview and the main container with all the tracking elements
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-              Expanded(
+          child: Column(
+            // column containing the listview and the main container with all the tracking elements
+              children: [
+                Expanded(
                   // contains the scrollable listView showing various yoga poses
-                  flex: 1,
-                  child: Padding(
-                      padding: const EdgeInsets.only(
-                          left: smallSpacing,
-                          top: largeSpacing,
-                          bottom: largeSpacing,
-                          right: smallSpacing),
-                      child: YogaListView())),
-              const SizedBox(
-                // Invisible box to add slightly more space between the top and bottom container
-                height: largeSpacing,
-              ),
-              Expanded(
-                // container with more than 60% of screen height containing the body tracking information
-                flex: 2,
-                child: Container(
+                    flex: 4,
+                    child: Padding(
+                        padding: const EdgeInsets.only(
+                            left: smallSpacing,
+                            top: largeSpacing,
+                            bottom: largeSpacing,
+                            right: smallSpacing),
+                        child: YogaListView())),
+                const SizedBox(
+                  // Invisible box to add slightly more space between the top and bottom container
+                  height: largeSpacing,
+                ),
+                Expanded(
+                  flex: 7,
+                  child: Container(
                     // container wrapping all tracking elements for styling purposes
-                    padding: const EdgeInsets.all(largeSpacing),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary,
-                        borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(veryLargeBorderRadius),
-                            topRight: Radius.circular(veryLargeBorderRadius))),
-                    child: Column(
-                      // main column of the tracking elements
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Padding(
-                          // padding of status bar
-                          padding: const EdgeInsets.only(
-                              left: 2 * veryLargeSpacing,
-                              right: 2 * veryLargeSpacing),
-                          child: Container(
-                            // status bar for current connection status
-                            padding: const EdgeInsets.all(smallSpacing),
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                                color: backgroundColor,
-                                borderRadius:
-                                    BorderRadius.circular(smallBorderRadius)),
-                            child: buildStateText(context),
-                          ),
-                        ),
-                        Row(
-                          // contains all the timer elements
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              // expand to make timer button take up remaining space
-                              flex: 1,
-                              child: ElevatedButton(
-                                // wrap timer with button so that we can open timer picker sheet
-                                onPressed: () async {
-                                  setState(() {
-                                    _timerButtonsActive = false;
-                                  });
-                                  Duration timer = await showModalBottomSheet(
-                                          context: context,
-                                          builder: (BuildContext context) =>
-                                              const TimerPickerSheet()) ?? const Duration();
-                                  // if we have a timer > 0 and context is still valid then we update the timer
-                                  if (timer > const Duration()) {
-                                    if (mounted) {
-                                      setState(() {
-                                        _timerButtonsActive = true;
-                                        _timerDuration = timer;
-                                      });
-                                    }
-                                  }
-                                },
-                                child: _timerButtonsActive
-                                    ? TimerCountdown(
-                                        onEnd: () async {
-                                          setState(() {
-                                            _timerButtonsActive = false;
-                                          });
-                                          await _player.play(
-                                            AssetSource(
-                                                'sounds/simple-notification.mp3'),
-                                          );
-                                          if (mounted) {
-                                            showDialog(
+                      padding: const EdgeInsets.all(largeSpacing),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(largeBorderRadius),
+                              topRight: Radius.circular(largeBorderRadius))),
+                      child: LayoutBuilder(
+                        // LayoutBuilder to make the tracking elements scrollable on smaller screens so that there is no overflow
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            // makes content scrollable if there is an overflow
+                            child: ConstrainedBox(
+                              // constraints based on layoutbuilder
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: Column(
+                                // main column of the tracking elements
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Padding(
+                                    // padding of status bar
+                                    padding: const EdgeInsets.only(
+                                        left: 2 * veryLargeSpacing,
+                                        right: 2 * veryLargeSpacing),
+                                    child: Container(
+                                      // status bar for current connection status
+                                      padding: const EdgeInsets.all(smallSpacing),
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                          color: backgroundColor,
+                                          borderRadius:
+                                          BorderRadius.circular(smallBorderRadius)),
+                                      child: buildStateText(context),
+                                    ),
+                                  ),
+                                  const SizedBox(height: largeSpacing,),
+                                  Row(
+                                    // contains all the timer elements
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Expanded(
+                                        // expand to make timer button take up remaining space
+                                        flex: 2,
+                                        child: ElevatedButton(
+                                          // wrap timer with button so that we can open timer picker sheet
+                                          onPressed: () async {
+                                            setState(() {
+                                              _timerButtonsActive = false;
+                                            });
+                                            Duration timer = await showModalBottomSheet(
+                                                isScrollControlled: true,
                                                 context: context,
-                                                builder: (context) =>
+                                                builder: (BuildContext context) =>
+                                                const TimerPickerSheet()) ?? const Duration();
+                                            // if we have a timer > 0 and context is still valid then we update the timer
+                                            if (timer > const Duration()) {
+                                              if (mounted) {
+                                                setState(() {
+                                                  _timerButtonsActive = true;
+                                                  _timerDuration = timer;
+                                                });
+                                              }
+                                            }
+                                          },
+                                          child: _timerButtonsActive
+                                              ? TimerCountdown(
+                                            onEnd: () async {
+                                              setState(() {
+                                                _timerButtonsActive = false;
+                                              });
+                                              await _player.play(
+                                                AssetSource(
+                                                    'sounds/simple-notification.mp3'),
+                                              );
+                                              if (mounted) {
+                                                showDialog(
+                                                    context: context,
+                                                    builder: (context) =>
                                                     const CustomDialog(
                                                         titleText: 'Finished!',
                                                         contentText:
-                                                            'Your timer has hit 0.'));
-                                          }
-                                        },
-                                        colonsTextStyle: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold),
-                                        timeTextStyle: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold),
-                                        enableDescriptions: false,
-                                        endTime:
+                                                        'Your timer has hit 0.'));
+                                              }
+                                            },
+                                            colonsTextStyle: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold),
+                                            timeTextStyle: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold),
+                                            enableDescriptions: false,
+                                            endTime:
                                             DateTime.now().add(_timerDuration),
-                                        format: CountDownTimerFormat
-                                            .hoursMinutesSeconds,
+                                            format: CountDownTimerFormat
+                                                .hoursMinutesSeconds,
+                                          )
+                                              : Text('Set Timer',
+                                              style: TextStyle(
+                                                  fontSize: 19,
+                                                  color: Theme.of(context)
+                                                      .primaryColor)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: largeSpacing),
+                                      Expanded(flex: 1, child: buildResetButton())
+                                    ],
+                                  ),
+                                  const SizedBox(height: largeSpacing,),
+                                  Column(
+                                    // contains tracking elements for current heart rate and body temp + section header
+                                    children: [
+                                      Text(
+                                        _headerTracker,
+                                        style: _headerTextStyle,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(
+                                        height: smallSpacing,
+                                      ),
+                                      DoubleBoxRow(
+                                        leftTopText: 'Heart Rate',
+                                        leftValue: _heartRate,
+                                        leftBottomText: _bpmString,
+                                        rightTopText: 'Body Temperature',
+                                        rightValue: _bodyTemp,
+                                        rightBottomText: 'Celsius',
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: largeSpacing,),
+                                  Column(
+                                    // contains the section header, the display elements for target and max heart rate and the row for the info buttons
+                                    children: [
+                                      Text(
+                                        _headerRecommendation,
+                                        style: _headerTextStyle,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: smallSpacing),
+                                      DoubleBoxRow(
+                                        leftValue: widget._targetHeartRate,
+                                        rightValue: widget._maxHeartRate,
+                                        leftBottomText: _bpmString,
+                                        leftTopText: _targetHeartRate,
+                                        rightTopText: _maxHeartRate,
+                                        rightBottomText: _bpmString,
+                                      ),
+                                      const SizedBox(
+                                        height: largeSpacing,
+                                      ),
+                                      Row(
+                                        // contains the two information buttons
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [
+                                          Expanded(
+                                            // expanded to force equal size
+                                            flex: 1,
+                                            child: ElevatedButton(
+                                              // button which when pressed shows a dialog that explains the target heart rate
+                                                onPressed: () => showDialog(
+                                                    context: context,
+                                                    builder: (context) => CustomDialog(
+                                                        titleText: _targetHeartRate,
+                                                        contentText:
+                                                        _dialogContentTargetHeartRate)),
+                                                child: const Icon(Icons.info)),
+                                          ),
+                                          const SizedBox(
+                                            width: largeSpacing,
+                                          ),
+                                          Expanded(
+                                            // expanded to force equal size
+                                            flex: 1,
+                                            child: ElevatedButton(
+                                              // button which when pressed shows a dialog explaining the max heart rate
+                                                onPressed: () => showDialog(
+                                                    context: context,
+                                                    builder: (context) => CustomDialog(
+                                                        titleText: _maxHeartRate,
+                                                        contentText:
+                                                        _dialogContentMaxHeartRate)),
+                                                child: const Icon(Icons.info)),
+                                          ),
+                                        ],
                                       )
-                                    : Text('Set Timer',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            color: Theme.of(context)
-                                                .primaryColor)),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: largeSpacing),
-                            Expanded(flex: 1, child: buildResetButton())
-                          ],
-                        ),
-                        Column(
-                          // contains tracking elements for current heart rate and body temp + section header
-                          children: [
-                            Text(
-                              _headerTracker,
-                              style: _headerTextStyle,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(
-                              height: smallSpacing,
-                            ),
-                            DoubleBoxRow(
-                              leftTopText: 'Heart Rate',
-                              leftValue: _heartRate,
-                              leftBottomText: _bpmString,
-                              rightTopText: 'Body Temperature',
-                              rightValue: _bodyTemp,
-                              rightBottomText: 'Celsius',
-                            ),
-                          ],
-                        ),
-                        Column(
-                          // contains the section header, the display elements for target and max heart rate and the row for the info buttons
-                          children: [
-                            Text(
-                              _headerRecommendation,
-                              style: _headerTextStyle,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: smallSpacing),
-                            DoubleBoxRow(
-                              leftValue: widget._targetHeartRate,
-                              rightValue: widget._maxHeartRate,
-                              leftBottomText: _bpmString,
-                              leftTopText: _targetHeartRate,
-                              rightTopText: _maxHeartRate,
-                              rightBottomText: _bpmString,
-                            ),
-                            const SizedBox(
-                              height: largeSpacing,
-                            ),
-                            Row(
-                              // contains the two information buttons
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Expanded(
-                                  // expanded to force equal size
-                                  flex: 1,
-                                  child: ElevatedButton(
-                                      // button which when pressed shows a dialog that explains the target heart rate
-                                      onPressed: () => showDialog(
-                                          context: context,
-                                          builder: (context) => CustomDialog(
-                                              titleText: _targetHeartRate,
-                                              contentText:
-                                                  _dialogContentTargetHeartRate)),
-                                      child: const Icon(Icons.info)),
-                                ),
-                                const SizedBox(
-                                  width: largeSpacing,
-                                ),
-                                Expanded(
-                                  // expanded to force equal size
-                                  flex: 1,
-                                  child: ElevatedButton(
-                                      // button which when pressed shows a dialog explaining the max heart rate
-                                      onPressed: () => showDialog(
-                                          context: context,
-                                          builder: (context) => CustomDialog(
-                                              titleText: _maxHeartRate,
-                                              contentText:
-                                                  _dialogContentMaxHeartRate)),
-                                      child: const Icon(Icons.info)),
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
-                      ],
-                    )),
-              )
-            ])));
+                          );
+                        },
+                      )),
+                )
+              ]),
+        ));
   }
 }

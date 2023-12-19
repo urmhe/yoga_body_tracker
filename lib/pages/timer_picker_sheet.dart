@@ -24,15 +24,13 @@ class _TimerPickerSheetState extends State<TimerPickerSheet> {
   Widget build(BuildContext context) {
     return Container(
       // main container which wraps all widgets
-      height: 425,
-      decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(veryLargeBorderRadius)),
+      decoration: const BoxDecoration(
+          color: backgroundColor,),
       width: double.infinity,
-      padding: const EdgeInsets.all(veryLargeSpacing),
+      padding: const EdgeInsets.all(largeSpacing),
       child: Column(
         // main column which encompasses all elements of the page
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Row(
             // contains the header elements that show what the current timer is separated by ':'
@@ -69,7 +67,7 @@ class _TimerPickerSheetState extends State<TimerPickerSheet> {
           ),
           Row(
             // contains the 3 numberpicker elements for choosing hours, minutes and seconds
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               TimeSelector(
                 value: _hours,

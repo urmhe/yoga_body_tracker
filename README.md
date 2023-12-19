@@ -4,7 +4,7 @@ A lifestyle app which uses a cosinus earable device to track heart rate and body
 
 ## Disclaimer
 
-The app uses the FlutterBlue package so any device with an android version of >10 is not supported.
+The app uses the FlutterBlue package so any device with an __android version of >10 is not supported.__
 Even though FlutterBluePlus supports newer versions of android, it is unable to receive some of the sensor data like heart rate and body temperature reliably.
 This is the reason why FlutterBlue was chosen instead as it can connect and provide the sensor data of the cosinus device without the above mentioned issues.
 

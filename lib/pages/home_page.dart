@@ -98,110 +98,126 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         // Appbar containing only a title
+        scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: backgroundColor,
         title: Text(_title, style: appBarTextStyle),
       ),
-      body: Center(
-        // app body
-        child: Padding(
-          // padding for all elements of the home page
-          padding: const EdgeInsets.all(veryLargeSpacing),
-          child: Column(
-            // Main container for all elements of the page
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Image.asset(
-                  // Illustration at the top of the page
-                  'assets/images/yoga_illustration.png',
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity),
-              Text(
-                // Text widget containing the disclaimer
-                _disclaimerText,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: HomePage._disclaimerFontSize,
-                    color: Colors.grey.shade700),
+      body: LayoutBuilder(
+        // Layout builder to make screen scrollable if there is an overflow
+        builder: (BuildContext context, BoxConstraints viewPortConstraints) {
+          return SingleChildScrollView(
+            // enable content to be scrolled if there is an overflow
+            child: ConstrainedBox(
+              // keep content constrained to max height of viewport
+              constraints: BoxConstraints(
+                minHeight: viewPortConstraints.maxHeight
               ),
-              DropdownButtonFormField(
-                  // dropdown for choosing sex
-                  hint: Text(_sexDropDownHint),
-                  value: _sex,
-                  icon: const Icon(
-                    Icons.arrow_drop_down_circle,
-                  ),
-                  decoration: const InputDecoration(
-                    label: Text('Sex'),
-                  ),
-                  isExpanded: true,
-                  items: Sex.values
-                      .map((item) => DropdownMenuItem(
-                            value: item,
-                            child: Text(item.string),
-                          ))
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _sex = val;
-                    });
-                  }),
-              DropdownButtonFormField(
-                  // dropdown for choosing exercise frequency
-                  hint: Text(_exerciseFrequencyDropDownHint),
-                  value: _frequency,
-                  icon: const Icon(
-                    Icons.arrow_drop_down_circle,
-                  ),
-                  decoration: const InputDecoration(
-                    label: Text('Exercise Frequency'),
-                  ),
-                  isExpanded: true,
-                  items: ExerciseFrequency.values
-                      .map((item) => DropdownMenuItem(
-                            value: item,
-                            child: Text(item.string),
-                          ))
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _frequency = val;
-                    });
-                  }),
-              Column(
-                // column which contains the age picker and its subtext
-                children: [
-                  NumberPicker(
-                    selectedTextStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 25),
-                    axis: Axis.horizontal,
-                    step: 1,
-                    minValue: 10,
-                    maxValue: 100,
-                    value: _userAge,
-                    onChanged: (int value) {
-                      setState(() {
-                        _userAge = value;
-                      });
-                    },
-                  ),
-                  Text('Please pick your age',
+              child: Padding(
+                // padding for all elements of the home page
+                padding: const EdgeInsets.all(veryLargeSpacing),
+                child: Column(
+                  // Main container for all elements of the page
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    Image.asset(
+                      // Illustration at the top of the page
+                        'assets/images/yoga_illustration.png',
+                        fit: BoxFit.fitWidth,
+                        width: viewPortConstraints.maxWidth - 70),
+                    const SizedBox(height: smallSpacing,),
+                    Text(
+                      // Text widget containing the disclaimer
+                      _disclaimerText,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500))
-                ],
+                          fontSize: HomePage._disclaimerFontSize,
+                          color: Colors.grey.shade700),
+                    ),
+                    const SizedBox(height: smallSpacing,),
+                    DropdownButtonFormField(
+                      // dropdown for choosing sex
+                        hint: Text(_sexDropDownHint),
+                        value: _sex,
+                        icon: const Icon(
+                          Icons.arrow_drop_down_circle,
+                        ),
+                        decoration: const InputDecoration(
+                          label: Text('Sex'),
+                        ),
+                        isExpanded: true,
+                        items: Sex.values
+                            .map((item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(item.string),
+                        ))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _sex = val;
+                          });
+                        }),
+                    DropdownButtonFormField(
+                      // dropdown for choosing exercise frequency
+                        hint: Text(_exerciseFrequencyDropDownHint),
+                        value: _frequency,
+                        icon: const Icon(
+                          Icons.arrow_drop_down_circle,
+                        ),
+                        decoration: const InputDecoration(
+                          label: Text('Exercise Frequency'),
+                        ),
+                        isExpanded: true,
+                        items: ExerciseFrequency.values
+                            .map((item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(item.string),
+                        ))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _frequency = val;
+                          });
+                        }),
+                    Column(
+                      // column which contains the age picker and its subtext
+                      children: [
+                        NumberPicker(
+                          selectedTextStyle: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 25),
+                          axis: Axis.horizontal,
+                          step: 1,
+                          minValue: 10,
+                          maxValue: 100,
+                          value: _userAge,
+                          onChanged: (int value) {
+                            setState(() {
+                              _userAge = value;
+                            });
+                          },
+                        ),
+                        Text('Please pick your age',
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500))
+                      ],
+                    ),
+                    const SizedBox(height: veryLargeSpacing),
+                    LargeRoundedButton(
+                      // Button to go to the body tracking page
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        textColor: Theme.of(context).colorScheme.onSecondary,
+                        buttonText: _startButtonText,
+                        onPressed: _navigateBodyTracking),
+                  ],
+                ),
               ),
-              LargeRoundedButton(
-                  // Button to go to the body tracking page
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  textColor: Theme.of(context).colorScheme.onSecondary,
-                  buttonText: _startButtonText,
-                  onPressed: _navigateBodyTracking),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

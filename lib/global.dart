@@ -17,7 +17,6 @@ const Color backgroundColor = Colors.white;
 // Radius used for most rounded containers in the app
 const double regularBorderRadius = 15.0;
 const double largeBorderRadius = 30.0;
-const double veryLargeBorderRadius = 45.0;
 const double smallBorderRadius = 8.0;
 const double verySmallBorderRadius = 4.0;
 

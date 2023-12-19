@@ -17,7 +17,7 @@ class LargeRoundedButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   // attribute used for styling
-  static const double _fontsize = 22;
+  static const double _fontsize = 21;
   static const double _minHeight = 45.0;
   static const double _paddingSize = 10.0;
 

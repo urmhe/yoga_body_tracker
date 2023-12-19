@@ -23,8 +23,9 @@ class DoubleBoxRow extends StatelessWidget {
 
   // Predefined styling attributes
   static const int _flexVal = 1;
-  static const double _numFontSize = 31;
+  static const double _numFontSize = 28;
 
+  // textstyle used for numbers
   static const TextStyle _numTextStyle = TextStyle(
     color: Colors.black,
     fontSize: _numFontSize,

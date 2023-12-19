@@ -10,11 +10,13 @@ final TextStyle appBarTextStyle =  TextStyle(
   fontWeight: FontWeight.bold
 );
 
-const Duration snackBarDuration = Duration(seconds: 3);
+// duration for snackbars
+const Duration snackBarDuration = Duration(seconds: 8);
 
+// background color
 const Color backgroundColor = Colors.white;
 
-// Radius used for most rounded containers in the app
+// Radii used for most rounded containers in the app
 const double regularBorderRadius = 15.0;
 const double largeBorderRadius = 30.0;
 const double smallBorderRadius = 8.0;

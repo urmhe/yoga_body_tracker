@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
         margin: const EdgeInsets.all(largeSpacing),
         showCloseIcon: true,
         closeIconColor: Colors.black,
-        duration: const Duration(seconds: 10),
+        duration: snackBarDuration,
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.errorContainer,
         content: ErrorSnackbarContent(
@@ -107,12 +107,11 @@ class _HomePageState extends State<HomePage> {
         // Layout builder to make screen scrollable if there is an overflow
         builder: (BuildContext context, BoxConstraints viewPortConstraints) {
           return SingleChildScrollView(
-            // enable content to be scrolled if there is an overflow
+            // enable content to be scrolled if it doesn't fit on the screen
             child: ConstrainedBox(
               // keep content constrained to max height of viewport
-              constraints: BoxConstraints(
-                minHeight: viewPortConstraints.maxHeight
-              ),
+              constraints:
+                  BoxConstraints(minHeight: viewPortConstraints.maxHeight),
               child: Padding(
                 // padding for all elements of the home page
                 padding: const EdgeInsets.all(veryLargeSpacing),
@@ -122,11 +121,13 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: <Widget>[
                     Image.asset(
-                      // Illustration at the top of the page
+                        // Illustration at the top of the page
                         'assets/images/yoga_illustration.png',
                         fit: BoxFit.fitWidth,
                         width: viewPortConstraints.maxWidth - 70),
-                    const SizedBox(height: smallSpacing,),
+                    const SizedBox(
+                      height: smallSpacing,
+                    ),
                     Text(
                       // Text widget containing the disclaimer
                       _disclaimerText,
@@ -135,9 +136,11 @@ class _HomePageState extends State<HomePage> {
                           fontSize: HomePage._disclaimerFontSize,
                           color: Colors.grey.shade700),
                     ),
-                    const SizedBox(height: smallSpacing,),
+                    const SizedBox(
+                      height: smallSpacing,
+                    ),
                     DropdownButtonFormField(
-                      // dropdown for choosing sex
+                        // dropdown for choosing sex
                         hint: Text(_sexDropDownHint),
                         value: _sex,
                         icon: const Icon(
@@ -149,9 +152,9 @@ class _HomePageState extends State<HomePage> {
                         isExpanded: true,
                         items: Sex.values
                             .map((item) => DropdownMenuItem(
-                          value: item,
-                          child: Text(item.string),
-                        ))
+                                  value: item,
+                                  child: Text(item.string),
+                                ))
                             .toList(),
                         onChanged: (val) {
                           setState(() {
@@ -159,7 +162,7 @@ class _HomePageState extends State<HomePage> {
                           });
                         }),
                     DropdownButtonFormField(
-                      // dropdown for choosing exercise frequency
+                        // dropdown for choosing exercise frequency.
                         hint: Text(_exerciseFrequencyDropDownHint),
                         value: _frequency,
                         icon: const Icon(
@@ -171,9 +174,9 @@ class _HomePageState extends State<HomePage> {
                         isExpanded: true,
                         items: ExerciseFrequency.values
                             .map((item) => DropdownMenuItem(
-                          value: item,
-                          child: Text(item.string),
-                        ))
+                                  value: item,
+                                  child: Text(item.string),
+                                ))
                             .toList(),
                         onChanged: (val) {
                           setState(() {
@@ -207,8 +210,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: veryLargeSpacing),
                     LargeRoundedButton(
-                      // Button to go to the body tracking page
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        // Button to go to the body tracking page
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
                         textColor: Theme.of(context).colorScheme.onSecondary,
                         buttonText: _startButtonText,
                         onPressed: _navigateBodyTracking),

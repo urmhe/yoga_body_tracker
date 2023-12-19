@@ -16,6 +16,7 @@ class TimerPickerSheet extends StatefulWidget {
 }
 
 class _TimerPickerSheetState extends State<TimerPickerSheet> {
+  // used to track the user input
   int _seconds = 0;
   int _hours = 0;
   int _minutes = 0;
@@ -25,7 +26,8 @@ class _TimerPickerSheetState extends State<TimerPickerSheet> {
     return Container(
       // main container which wraps all widgets
       decoration: const BoxDecoration(
-          color: backgroundColor,),
+        color: backgroundColor,
+      ),
       width: double.infinity,
       padding: const EdgeInsets.all(largeSpacing),
       child: Column(

@@ -19,12 +19,13 @@ class ErrorSnackbarContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      // main colum containing all elements
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         Text(
           _header,
           style: const TextStyle(
-              fontSize: 21, fontWeight: FontWeight.bold, color: Colors.black),
+              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
         ),
         const SizedBox(
           height: smallSpacing,

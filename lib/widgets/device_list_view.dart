@@ -6,7 +6,8 @@ import '../util/user_data.dart';
 
 /// Listview containing tiles for each bluetooth device that is found by the bluetooth scan
 class DeviceListView extends StatelessWidget {
-  const DeviceListView({super.key, required this.itemList, required this.userData});
+  const DeviceListView(
+      {super.key, required this.itemList, required this.userData});
 
   final List<ScanResult> itemList;
   final UserData userData;
@@ -20,7 +21,10 @@ class DeviceListView extends StatelessWidget {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => TrackerPage(device: itemList[index].device, userData: userData,)));
+            builder: (context) => TrackerPage(
+                  device: itemList[index].device,
+                  userData: userData,
+                )));
   }
 
   @override
@@ -42,12 +46,15 @@ class DeviceListView extends StatelessWidget {
                     Icons.bluetooth,
                     color: Colors.white,
                   )),
-              title: Text(itemList[index].device.name),
+              title: Text(
+                  // text showing the name of the device
+                  itemList[index].device.name),
               titleTextStyle: TextStyle(
                   fontSize: _fontSize,
                   color: Colors.black87,
                   fontWeight: FontWeight.bold),
               trailing: ElevatedButton(
+                // button to move to tracker page
                 onPressed: () {
                   _onTilePressed(context, index);
                 },

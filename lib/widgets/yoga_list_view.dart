@@ -1,6 +1,7 @@
 import 'package:chillout_hrm/global.dart';
 import 'package:flutter/material.dart';
 
+/// Listview which contains yoga illustrations with a horizontal scoll behaviour
 class YogaListView extends StatelessWidget {
   YogaListView({
     super.key,
@@ -21,6 +22,7 @@ class YogaListView extends StatelessWidget {
   Widget build(BuildContext context) {
     List<String> pictures = buildPicturePathList();
     return Scrollbar(
+      // show scrollbar below listview
       interactive: true,
       thumbVisibility: true,
       controller: _controller,
@@ -32,6 +34,7 @@ class YogaListView extends StatelessWidget {
           itemCount: pictures.length,
           itemBuilder: (context, index) {
             return Container(
+              // container for each image
               width: MediaQuery.of(context).size.width - 2 * smallSpacing,
               // picture should fill entire screen minus padding on both sides
               decoration: BoxDecoration(

@@ -35,10 +35,10 @@ class DoubleBoxRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-        // Contains two evenly sized rounded containers
+        // Main row - contains two evenly sized rounded containers
         children: [
           Expanded(
-            // force equal size
+            // used to force equal size
             flex: _flexVal,
             child: Container(
               // left container

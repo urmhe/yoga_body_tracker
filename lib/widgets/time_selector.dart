@@ -26,12 +26,14 @@ class TimeSelector extends StatelessWidget {
       children: [
         Text(header,
             style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey.shade700,)),
+              fontSize: 18,
+              color: Colors.grey.shade700,
+            )),
         const SizedBox(
           height: smallSpacing,
         ),
         NumberPicker(
+            // widget which provides a scrollable list of numbers
             itemCount: 3,
             textStyle: const TextStyle(color: Colors.black, fontSize: 21),
             selectedTextStyle: TextStyle(

@@ -28,6 +28,7 @@ class CustomDialog extends StatelessWidget {
       ),
       actions: <Widget>[
         TextButton(
+          // button to close the dialog
           onPressed: () => Navigator.pop(context),
           child: const Text('OK', style: TextStyle(fontSize: 17)),
         )

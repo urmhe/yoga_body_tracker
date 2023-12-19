@@ -13,7 +13,6 @@ import '../widgets/rounded_button.dart';
 /// Scan page - scans for available bluetooth devices and lists them in a listView
 /// User can choose to connect to one of the available devices
 class ScanPage extends StatefulWidget {
-
   const ScanPage({super.key, required this.userData});
 
   // data object containing the information that user provided on home screen
@@ -49,7 +48,7 @@ class _ScanPageState extends State<ScanPage> {
   void initState() {
     super.initState();
 
-    // listen to adapterstate and return to home screen is bluetooth is ever turned off
+    // listen to adapterstate and return to home screen if bluetooth is ever turned off
     _adapterStateSubscription = flutterBlue.state.listen((state) {
       if (state == BluetoothState.off) {
         if (!context.mounted) return;
@@ -88,7 +87,7 @@ class _ScanPageState extends State<ScanPage> {
         margin: const EdgeInsets.all(largeSpacing),
         showCloseIcon: true,
         closeIconColor: Colors.black,
-        duration: const Duration(seconds: 10),
+        duration: snackBarDuration,
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.errorContainer,
         content: ErrorSnackbarContent(
@@ -108,7 +107,7 @@ class _ScanPageState extends State<ScanPage> {
 
   /// Start scanning and show error message if a problem occurs
   Future scanPressed() async {
-    // on request location permission when first using the app
+    // request location permission when first using the app
     await Permission.location.request();
 
     // try starting the scan for device and show error snackbar in case of an error
@@ -120,7 +119,8 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  /// Provides the button that is used for starting and stopping the scan depending on the current _scanning value
+  /// Provides the button that is used for starting and stopping the scan
+  /// depending on whether the scan is currently active or not
   Widget buildButton(BuildContext context) {
     return LargeRoundedButton(
       backgroundColor: _scanning
@@ -160,23 +160,28 @@ class _ScanPageState extends State<ScanPage> {
           ),
         ),
         body: Column(
+            // main column containing all elements of the page
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                // contains the scan button
-                  padding: const EdgeInsets.all(veryLargeSpacing),
-                  child: buildButton(context)),
               Expanded(
                 // expand listview so that it takes up the rest of the screen
                 flex: 1,
                 child: Padding(
                   padding: const EdgeInsets.all(smallSpacing),
                   child: DeviceListView(
+                    // listview of all scanResults
                     itemList: _scanResults,
                     userData: widget.userData,
                   ),
                 ),
               ),
+              const SizedBox(
+                height: smallSpacing,
+              ),
+              Container(
+                  // contains the scan button
+                  padding: const EdgeInsets.all(veryLargeSpacing),
+                  child: buildButton(context)),
             ]));
   }
 }

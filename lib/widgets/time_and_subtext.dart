@@ -14,6 +14,8 @@ class TimeAndSubtext extends StatelessWidget {
   final int numVal;
   final String subText;
 
+  /// Return a string representation of the input number. If the input is smaller than 10, then a leading
+  /// 0 is added to the string.
   String numValToString(int number) {
     if (number >= 0 && number <= 9) return '0$number';
     return number.toString();
@@ -22,6 +24,7 @@ class TimeAndSubtext extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      // main column that contains all elements
       children: [
         Text(
           numValToString(numVal),

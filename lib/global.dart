@@ -20,7 +20,6 @@ const Color backgroundColor = Colors.white;
 const double regularBorderRadius = 15.0;
 const double largeBorderRadius = 30.0;
 const double smallBorderRadius = 8.0;
-const double verySmallBorderRadius = 4.0;
 
 // Spacing values
 const double largeSpacing = 8.0;

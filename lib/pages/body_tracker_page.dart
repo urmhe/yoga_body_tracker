@@ -17,6 +17,13 @@ import '../widgets/error_snackbar_content.dart';
 /// Page displaying the heart rate and body temperature that is received by the cosinus device sensors
 /// as well as a listview of yoga exercises
 class TrackerPage extends StatefulWidget {
+  // standard constructor which also initializes target and max heart rate
+  TrackerPage({super.key, required this.device, required this.userData}) {
+    UserLimitEstimator eval = UserLimitEstimator(userData: userData);
+    _targetHeartRate = eval.targetHeartRate;
+    _maxHeartRate = eval.maxHeartRate;
+  }
+
   // device chosen by user
   final BluetoothDevice device;
 
@@ -27,24 +34,12 @@ class TrackerPage extends StatefulWidget {
   late final double _targetHeartRate;
   late final double _maxHeartRate;
 
-  // standard constructor which also initializes target and max heart rate
-  TrackerPage({super.key, required this.device, required this.userData}) {
-    UserLimitEstimator eval = UserLimitEstimator(userData: userData);
-    _targetHeartRate = eval.targetHeartRate;
-    _maxHeartRate = eval.maxHeartRate;
-  }
-
-  @override
-  State<TrackerPage> createState() => _TrackerPageState();
-}
-
-class _TrackerPageState extends State<TrackerPage> {
   // Strings used throughout the page
   final String _title = 'Body Tracker';
   final String _headerTracker = "Tracker";
   final String _bpmString = 'BPM';
-  final String _targetHeartRate = 'Target Heart Rate';
-  final String _maxHeartRate = 'Max Heart Rate';
+  final String _targetHeartRateHeader = 'Target Heart Rate';
+  final String _maxHeartRateHeader = 'Max Heart Rate';
   final String _headerRecommendation = "Recommendation";
   final String _connectedString = 'Connected';
   final String _connectingString = 'Connecting...';
@@ -64,6 +59,14 @@ class _TrackerPageState extends State<TrackerPage> {
   final TextStyle _headerTextStyle =
       const TextStyle(color: Colors.white, fontSize: 21);
 
+  // Audioplayer for playing sound when timer runs out
+  final AudioPlayer _player = AudioPlayer();
+
+  @override
+  State<TrackerPage> createState() => _TrackerPageState();
+}
+
+class _TrackerPageState extends State<TrackerPage> {
   // current heart rate and body temp
   double _heartRate = 0;
   double _bodyTemp = 0;
@@ -85,10 +88,7 @@ class _TrackerPageState extends State<TrackerPage> {
 
   // timer related attributes
   bool _timerButtonsActive = false;
-  Duration _timerDuration = Duration();
-
-  // Audioplayer for playing sound when timer runs out
-  final AudioPlayer _player = AudioPlayer();
+  Duration _timerDuration = const Duration();
 
   @override
   void initState() {
@@ -96,7 +96,7 @@ class _TrackerPageState extends State<TrackerPage> {
 
     // subscribe to device state
     _connectionStateSubscription = widget.device.state.listen((state) async {
-      if (context.mounted) {
+      if (mounted) {
         setState(() {
           _connectionState = state;
         });
@@ -119,7 +119,7 @@ class _TrackerPageState extends State<TrackerPage> {
     _services = [];
 
     // update state to connecting since this state is not emitted by the stream but we want to show it on the screen
-    if (context.mounted) {
+    if (mounted) {
       setState(() {
         _connectionState = BluetoothDeviceState.connecting;
       });
@@ -132,22 +132,22 @@ class _TrackerPageState extends State<TrackerPage> {
       await widget.device
           .connect(autoConnect: false)
           .timeout(const Duration(seconds: 15), onTimeout: () {
-        if (context.mounted) {
+        if (mounted) {
           setState(() {
             _connectionState = BluetoothDeviceState.disconnected;
           });
         }
-        showSnackBarError(_failedConnectionAttemptMessage);
+        showSnackBarError(widget._failedConnectionAttemptMessage);
         return;
       });
     } catch (e) {
       // if connection goes wrong then then we show error showing that connection failed
-      if (context.mounted) {
+      if (mounted) {
         setState(() {
           _connectionState = BluetoothDeviceState.disconnected;
         });
       }
-      showSnackBarError(_failedConnectionAttemptMessage);
+      showSnackBarError(widget._failedConnectionAttemptMessage);
       return;
     }
 
@@ -159,7 +159,7 @@ class _TrackerPageState extends State<TrackerPage> {
       // This counts as a failed attempt at connecting for the purpose of the app
       _connectionAttempts++;
       if (!(_connectionAttempts < _maxAttempts)) {
-        showSnackBarError(_failedConnectionAttemptMessage);
+        showSnackBarError(widget._failedConnectionAttemptMessage);
       }
       await widget.device.disconnect();
       return;
@@ -171,7 +171,7 @@ class _TrackerPageState extends State<TrackerPage> {
     // check if necessary characteristics were found. If not then probably the wrong device was chosen so there is no point in reconnecting
     if (_bodyTempSubscription == null && _heartRateSubscription == null) {
       _keepReconnecting = false;
-      showSnackBarError(_wrongDeviceMessage);
+      showSnackBarError(widget._wrongDeviceMessage);
       await widget.device.disconnect();
     }
   }
@@ -258,7 +258,7 @@ class _TrackerPageState extends State<TrackerPage> {
   /// Error handling was added to the original code.
   /// [sensorData] is the raw data that is received from the earable.
   void updateHeartRate(sensorData) {
-    // update only twice per second to reduce
+    // update only twice per second
     if (_ignoreHeartRate) return;
     Timer(const Duration(milliseconds: 500), () {
       _ignoreHeartRate = false;
@@ -268,7 +268,7 @@ class _TrackerPageState extends State<TrackerPage> {
     Uint8List bytes = Uint8List.fromList(sensorData);
 
     if (bytes.isEmpty)
-      return; // if completely empty then do nothing and return immediately
+      return; // if empty then do nothing and return immediately
 
     // based on GATT standard
     var bpm;
@@ -334,17 +334,17 @@ class _TrackerPageState extends State<TrackerPage> {
     switch (_connectionState) {
       case BluetoothDeviceState.disconnected:
         textColor = Theme.of(context).colorScheme.error;
-        displayText = _disconnectedString;
+        displayText = widget._disconnectedString;
         break;
 
       case BluetoothDeviceState.connecting:
         textColor = Theme.of(context).colorScheme.tertiary;
-        displayText = _connectingString;
+        displayText = widget._connectingString;
         break;
 
       case BluetoothDeviceState.connected:
         textColor = Theme.of(context).colorScheme.secondary;
-        displayText = _connectedString;
+        displayText = widget._connectedString;
         break;
 
       default:
@@ -366,7 +366,7 @@ class _TrackerPageState extends State<TrackerPage> {
     _connectionStateSubscription.cancel();
     _heartRateSubscription?.cancel();
     _bodyTempSubscription?.cancel();
-    _player.dispose();
+    widget._player.dispose();
     super.dispose();
   }
 
@@ -380,7 +380,7 @@ class _TrackerPageState extends State<TrackerPage> {
           automaticallyImplyLeading: true,
           centerTitle: true,
           backgroundColor: backgroundColor,
-          title: Text(_title, style: appBarTextStyle),
+          title: Text(widget._title, style: appBarTextStyle),
         ),
         body: Center(
           child: Column(
@@ -468,7 +468,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                                         context: context,
                                                         builder: (BuildContext
                                                                 context) =>
-                                                            const TimerPickerSheet()) ??
+                                                            TimerPickerSheet()) ??
                                                     const Duration();
                                             // if we have a timer > 0 and context is still valid then we update the timer
                                             if (timer > const Duration()) {
@@ -487,7 +487,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                                       _timerButtonsActive =
                                                           false;
                                                     });
-                                                    await _player.play(
+                                                    await widget._player.play(
                                                       AssetSource(
                                                           'sounds/simple-notification.mp3'),
                                                     );
@@ -523,8 +523,8 @@ class _TrackerPageState extends State<TrackerPage> {
                                     // contains tracking elements for current heart rate and body temp + section header
                                     children: [
                                       Text(
-                                        _headerTracker,
-                                        style: _headerTextStyle,
+                                        widget._headerTracker,
+                                        style: widget._headerTextStyle,
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(
@@ -533,7 +533,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                       DoubleBoxRow(
                                         leftTopText: 'Heart Rate',
                                         leftValue: _heartRate,
-                                        leftBottomText: _bpmString,
+                                        leftBottomText: widget._bpmString,
                                         rightTopText: 'Body Temperature',
                                         rightValue: _bodyTemp,
                                         rightBottomText: 'Celsius',
@@ -547,18 +547,20 @@ class _TrackerPageState extends State<TrackerPage> {
                                     // contains the section header, the display elements for target and max heart rate and the row for the info buttons
                                     children: [
                                       Text(
-                                        _headerRecommendation,
-                                        style: _headerTextStyle,
+                                        widget._headerRecommendation,
+                                        style: widget._headerTextStyle,
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: smallSpacing),
                                       DoubleBoxRow(
                                         leftValue: widget._targetHeartRate,
                                         rightValue: widget._maxHeartRate,
-                                        leftBottomText: _bpmString,
-                                        leftTopText: _targetHeartRate,
-                                        rightTopText: _maxHeartRate,
-                                        rightBottomText: _bpmString,
+                                        leftBottomText: widget._bpmString,
+                                        leftTopText:
+                                            widget._targetHeartRateHeader,
+                                        rightTopText:
+                                            widget._maxHeartRateHeader,
+                                        rightBottomText: widget._bpmString,
                                       ),
                                       const SizedBox(
                                         height: largeSpacing,
@@ -575,12 +577,11 @@ class _TrackerPageState extends State<TrackerPage> {
                                                 // button which when pressed shows a dialog that explains the target heart rate
                                                 onPressed: () => showDialog(
                                                     context: context,
-                                                    builder: (context) =>
-                                                        CustomDialog(
-                                                            titleText:
-                                                                _targetHeartRate,
-                                                            contentText:
-                                                                _dialogContentTargetHeartRate)),
+                                                    builder: (context) => CustomDialog(
+                                                        titleText: widget
+                                                            ._targetHeartRateHeader,
+                                                        contentText: widget
+                                                            ._dialogContentTargetHeartRate)),
                                                 child: const Icon(Icons.info)),
                                           ),
                                           const SizedBox(
@@ -593,12 +594,11 @@ class _TrackerPageState extends State<TrackerPage> {
                                                 // button which when pressed shows a dialog explaining the max heart rate
                                                 onPressed: () => showDialog(
                                                     context: context,
-                                                    builder: (context) =>
-                                                        CustomDialog(
-                                                            titleText:
-                                                                _maxHeartRate,
-                                                            contentText:
-                                                                _dialogContentMaxHeartRate)),
+                                                    builder: (context) => CustomDialog(
+                                                        titleText: widget
+                                                            ._maxHeartRateHeader,
+                                                        contentText: widget
+                                                            ._dialogContentMaxHeartRate)),
                                                 child: const Icon(Icons.info)),
                                           ),
                                         ],

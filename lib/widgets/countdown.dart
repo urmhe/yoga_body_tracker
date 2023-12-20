@@ -5,12 +5,11 @@ import 'package:flutter/material.dart';
 /// This class is a simple Countdown widget which on creation starts a countdown from the provided [timerDuration].
 /// After the duration is over the [onEnd] Function is called.
 class TimerCountDown extends StatefulWidget {
-  final Duration timerDuration;
-
   const TimerCountDown(
       {super.key, required this.onEnd, required this.timerDuration});
 
   final Function onEnd;
+  final Duration timerDuration;
 
   static const TextStyle separatorTextStyle =
       TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold);

@@ -9,33 +9,28 @@ import '../global.dart';
 import '../util/user_data.dart';
 import '../widgets/rounded_button.dart';
 
-/// Landingpage of the App which provides some information about how to use the app and offer navigation to bluetooth devices
-/// as well as to the body tracking page
+/// Landingpage of the App with which requests some input from user before proceeding to the bluetooth scan page
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  static const double _disclaimerFontSize = 17;
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
   //appbar title
   final String _title = 'Welcome';
 
-  // Strings used throughout the page
-  final String _disclaimerText =
-      "To use the app, please make sure to keep bluetooth on at all times";
   final String _startButtonText = "Get started";
   final String _sexDropDownHint = 'What is your sex?';
   final String _exerciseFrequencyDropDownHint = 'How often do you exercise?';
+  final String _agePickerHint = 'What is your age?';
 
   // error messages
   final String _errorBluetoothOff = 'Please turn on bluetooth.';
   final String _errorBtNotSupported = 'This device does not support bluetooth.';
   final String _dataMissing = 'Please fill out all fields.';
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   // user input
   Sex? _sex;
   ExerciseFrequency? _frequency;
@@ -51,7 +46,7 @@ class _HomePageState extends State<HomePage> {
           frequency: _frequency as ExerciseFrequency,
           age: _userAge);
     } else {
-      showSnackBarError(_dataMissing);
+      showSnackBarError(widget._dataMissing);
       return;
     }
 
@@ -64,17 +59,17 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => ScanPage(userData: user)));
       } else {
-        showSnackBarError(_errorBluetoothOff);
+        showSnackBarError(widget._errorBluetoothOff);
       }
     } else {
-      showSnackBarError(_errorBtNotSupported);
+      showSnackBarError(widget._errorBtNotSupported);
     }
   }
 
   /// Shows a snackbar error message at the bottom of the screen after checking
   /// that the buildcontext is still valid
   Future showSnackBarError(String message) async {
-    if (!context.mounted) return;
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(),
@@ -101,7 +96,7 @@ class _HomePageState extends State<HomePage> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: backgroundColor,
-        title: Text(_title, style: appBarTextStyle),
+        title: Text(widget._title, style: appBarTextStyle),
       ),
       body: LayoutBuilder(
         // Layout builder to make screen scrollable if there is an overflow
@@ -124,24 +119,13 @@ class _HomePageState extends State<HomePage> {
                         // Illustration at the top of the page
                         'assets/images/yoga_illustration.png',
                         fit: BoxFit.fitWidth,
-                        width: viewPortConstraints.maxWidth - 70),
-                    const SizedBox(
-                      height: smallSpacing,
-                    ),
-                    Text(
-                      // Text widget containing the disclaimer
-                      _disclaimerText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: HomePage._disclaimerFontSize,
-                          color: Colors.grey.shade700),
-                    ),
+                        width: viewPortConstraints.maxWidth - 60),
                     const SizedBox(
                       height: smallSpacing,
                     ),
                     DropdownButtonFormField(
                         // dropdown for choosing sex
-                        hint: Text(_sexDropDownHint),
+                        hint: Text(widget._sexDropDownHint),
                         value: _sex,
                         icon: const Icon(
                           Icons.arrow_drop_down_circle,
@@ -163,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                         }),
                     DropdownButtonFormField(
                         // dropdown for choosing exercise frequency.
-                        hint: Text(_exerciseFrequencyDropDownHint),
+                        hint: Text(widget._exerciseFrequencyDropDownHint),
                         value: _frequency,
                         icon: const Icon(
                           Icons.arrow_drop_down_circle,
@@ -183,6 +167,9 @@ class _HomePageState extends State<HomePage> {
                             _frequency = val;
                           });
                         }),
+                    const SizedBox(
+                      height: smallSpacing,
+                    ),
                     Column(
                       // column which contains the age picker and its subtext
                       children: [
@@ -201,20 +188,20 @@ class _HomePageState extends State<HomePage> {
                             });
                           },
                         ),
-                        Text('Please pick your age',
+                        Text(widget._agePickerHint,
                             style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.grey.shade700,
                                 fontWeight: FontWeight.w500))
                       ],
                     ),
-                    const SizedBox(height: veryLargeSpacing),
+                    const SizedBox(height: largeSpacing),
                     LargeRoundedButton(
                         // Button to go to the body tracking page
                         backgroundColor:
                             Theme.of(context).colorScheme.secondary,
                         textColor: Theme.of(context).colorScheme.onSecondary,
-                        buttonText: _startButtonText,
+                        buttonText: widget._startButtonText,
                         onPressed: _navigateBodyTracking),
                   ],
                 ),

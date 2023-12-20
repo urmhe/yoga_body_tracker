@@ -7,9 +7,13 @@ import '../widgets/time_selector.dart';
 
 /// This is used as a modalbottomsheet for setting up a timer.
 class TimerPickerSheet extends StatefulWidget {
-  const TimerPickerSheet({
+  TimerPickerSheet({
     super.key,
   });
+
+  final String _buttonString = 'Start Timer';
+  final TextStyle _separatorTextStyle = TextStyle(
+      color: Colors.grey.shade700, fontSize: 38, fontWeight: FontWeight.bold);
 
   @override
   State<TimerPickerSheet> createState() => _TimerPickerSheetState();
@@ -45,10 +49,7 @@ class _TimerPickerSheetState extends State<TimerPickerSheet> {
               ),
               Text(
                 ':',
-                style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold),
+                style: widget._separatorTextStyle,
               ),
               TimeAndSubtext(
                 numVal: _minutes,
@@ -56,10 +57,7 @@ class _TimerPickerSheetState extends State<TimerPickerSheet> {
               ),
               Text(
                 ':',
-                style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold),
+                style: widget._separatorTextStyle,
               ),
               TimeAndSubtext(
                 numVal: _seconds,
@@ -106,7 +104,7 @@ class _TimerPickerSheetState extends State<TimerPickerSheet> {
           LargeRoundedButton(
               // button to return to tracking page and provide the created timer as Duration
               backgroundColor: Theme.of(context).cardColor,
-              buttonText: 'Start Timer',
+              buttonText: widget._buttonString,
               textColor: Theme.of(context).primaryColor,
               onPressed: () => Navigator.pop(
                   context,

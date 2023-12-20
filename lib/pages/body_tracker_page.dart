@@ -7,11 +7,10 @@ import 'package:chillout_hrm/widgets/double_box_row.dart';
 import 'package:chillout_hrm/widgets/yoga_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
-import 'package:synchronized/synchronized.dart';
 
 import '../global.dart';
 import '../util/user_data.dart';
+import '../widgets/countdown.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/error_snackbar_content.dart';
 
@@ -53,7 +52,7 @@ class _TrackerPageState extends State<TrackerPage> {
   final String _dialogContentTargetHeartRate =
       'This is a certain percentage of the maximum heart rate based on how often you exercise.\n\nIf your goal is to lose weight then keeping your heart rate at this level would be ideal.';
   final String _dialogContentMaxHeartRate =
-      'This is an estimation of what the maximum heart rate is that your body can handle.\n\nIt\'s calculated based on age, gender and how often you exercise.';
+      'This is an estimation of what the maximum heart rate is that your body can handle.\n\nIt\'s calculated based on age, sex and how often you exercise.';
 
   // Error messages
   final String _failedConnectionAttemptMessage =
@@ -81,9 +80,12 @@ class _TrackerPageState extends State<TrackerPage> {
 
   List<BluetoothService> _services = [];
 
+  bool _ignoreTemp = false;
+  bool _ignoreHeartRate = false;
+
   // timer related attributes
   bool _timerButtonsActive = false;
-  Duration _timerDuration = const Duration();
+  Duration _timerDuration = Duration();
 
   // Audioplayer for playing sound when timer runs out
   final AudioPlayer _player = AudioPlayer();
@@ -179,29 +181,25 @@ class _TrackerPageState extends State<TrackerPage> {
   /// subscribes to the characteristics that provide heart rate and body temperature
   Future<void> subscribeToCharacteristics(
       List<BluetoothService> services) async {
-    // lock to sequentially call setNotifyValue(true) which prevents a bug in FlutterBlue which can cause a PlattformException
-    var lock = Lock();
-
     for (BluetoothService service in services) {
       for (BluetoothCharacteristic c in service.characteristics) {
         switch (c.uuid.toString()) {
           case "00002a37-0000-1000-8000-00805f9b34fb":
-            await lock.synchronized(() async {
-              await c.setNotifyValue(true);
-              await Future.delayed(const Duration(milliseconds: 300));
-              _heartRateSubscription =
-                  c.value.listen((sensorData) => updateHeartRate(sensorData));
+            await c.setNotifyValue(true);
+            await Future.delayed(const Duration(milliseconds: 300));
+            _heartRateSubscription = c.value.listen((sensorData) {
+              updateHeartRate(sensorData);
             });
             break;
 
           case "00002a1c-0000-1000-8000-00805f9b34fb":
-            await lock.synchronized(() async {
-              await c.setNotifyValue(true);
-              await Future.delayed(const Duration(milliseconds: 300));
-              _bodyTempSubscription = c.value.listen(
-                (sensorData) => updateBodyTemperature(sensorData),
-              );
-            });
+            await c.setNotifyValue(true);
+            await Future.delayed(const Duration(milliseconds: 300));
+            _bodyTempSubscription = c.value.listen(
+              (sensorData) {
+                updateBodyTemperature(sensorData);
+              },
+            );
             break;
 
           default:
@@ -225,6 +223,13 @@ class _TrackerPageState extends State<TrackerPage> {
   /// Error handling was added to the original code.
   /// [sensorData] is the raw data that is received from the earable.
   void updateBodyTemperature(sensorData) {
+    // update only twice per second
+    if (_ignoreTemp) return;
+    Timer(const Duration(milliseconds: 500), () {
+      _ignoreTemp = false;
+    });
+    _ignoreTemp = true;
+
     var flag;
     try {
       flag = sensorData[0];
@@ -253,6 +258,13 @@ class _TrackerPageState extends State<TrackerPage> {
   /// Error handling was added to the original code.
   /// [sensorData] is the raw data that is received from the earable.
   void updateHeartRate(sensorData) {
+    // update only twice per second to reduce
+    if (_ignoreHeartRate) return;
+    Timer(const Duration(milliseconds: 500), () {
+      _ignoreHeartRate = false;
+    });
+    _ignoreHeartRate = true;
+
     Uint8List bytes = Uint8List.fromList(sensorData);
 
     if (bytes.isEmpty)
@@ -376,7 +388,7 @@ class _TrackerPageState extends State<TrackerPage> {
               children: [
                 Expanded(
                     // contains the scrollable listView showing various yoga poses
-                    flex: 4,
+                    flex: 1,
                     child: Padding(
                         padding: const EdgeInsets.only(
                             left: smallSpacing,
@@ -389,7 +401,7 @@ class _TrackerPageState extends State<TrackerPage> {
                   height: largeSpacing,
                 ),
                 Expanded(
-                  flex: 7,
+                  flex: 2,
                   child: Container(
                       // container wrapping all tracking elements for styling purposes
                       padding: const EdgeInsets.all(largeSpacing),
@@ -469,7 +481,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                             }
                                           },
                                           child: _timerButtonsActive
-                                              ? TimerCountdown(
+                                              ? TimerCountDown(
                                                   onEnd: () async {
                                                     setState(() {
                                                       _timerButtonsActive =
@@ -490,22 +502,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                                                       'Your timer has hit 0.'));
                                                     }
                                                   },
-                                                  colonsTextStyle:
-                                                      const TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 20,
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                  timeTextStyle:
-                                                      const TextStyle(
-                                                          fontSize: 22,
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                  enableDescriptions: false,
-                                                  endTime: DateTime.now()
-                                                      .add(_timerDuration),
-                                                  format: CountDownTimerFormat
-                                                      .hoursMinutesSeconds,
+                                                  timerDuration: _timerDuration,
                                                 )
                                               : Text('Set Timer',
                                                   style: TextStyle(
@@ -520,7 +517,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                     ],
                                   ),
                                   const SizedBox(
-                                    height: largeSpacing,
+                                    height: smallSpacing,
                                   ),
                                   Column(
                                     // contains tracking elements for current heart rate and body temp + section header

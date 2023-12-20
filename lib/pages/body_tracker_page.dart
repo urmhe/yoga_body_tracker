@@ -267,8 +267,7 @@ class _TrackerPageState extends State<TrackerPage> {
 
     Uint8List bytes = Uint8List.fromList(sensorData);
 
-    if (bytes.isEmpty)
-      return; // if empty then do nothing and return immediately
+    if (bytes.isEmpty) return; // if empty do nothing and return immediately
 
     // based on GATT standard
     var bpm;

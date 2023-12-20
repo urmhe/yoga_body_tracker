@@ -68,6 +68,7 @@ class _HomePageState extends State<HomePage> {
 
   /// Shows a snackbar error message at the bottom of the screen after checking
   /// that the buildcontext is still valid
+  /// [message] is the Text that is displayed in the snackbar.
   Future showSnackBarError(String message) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

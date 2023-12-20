@@ -80,6 +80,7 @@ class _ScanPageState extends State<ScanPage> {
 
   /// Shows a snackbar error message at the bottom of the screen after checking
   /// that the context is still valid.
+  /// [message] is the Text that is displayed in the snackbar.
   Future showSnackBarError(String message) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

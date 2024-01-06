@@ -22,6 +22,7 @@ class TrackerPage extends StatefulWidget {
     UserLimitEstimator eval = UserLimitEstimator(userData: userData);
     _targetHeartRate = eval.targetHeartRate;
     _maxHeartRate = eval.maxHeartRate;
+    _maxTemp = eval.feverTemperature;
   }
 
   // device chosen by user
@@ -33,6 +34,7 @@ class TrackerPage extends StatefulWidget {
   // calculated based on userData
   late final double _targetHeartRate;
   late final double _maxHeartRate;
+  late final double _maxTemp;
 
   // Strings used throughout the page
   final String _title = 'Body Tracker';
@@ -68,8 +70,8 @@ class TrackerPage extends StatefulWidget {
 
 class _TrackerPageState extends State<TrackerPage> {
   // current heart rate and body temp
-  double _heartRate = 0;
-  double _bodyTemp = 0;
+  double _heartRate = 0.0;
+  double _bodyTemp = 0.0;
 
   //Streamsubscriptions & BLE related attribute
   final int _maxAttempts = 2;
@@ -530,9 +532,17 @@ class _TrackerPageState extends State<TrackerPage> {
                                         height: smallSpacing,
                                       ),
                                       DoubleBoxRow(
+                                        leftValueColor:
+                                            _heartRate >= widget._maxHeartRate
+                                                ? Colors.redAccent
+                                                : Colors.black,
                                         leftTopText: 'Heart Rate',
                                         leftValue: _heartRate,
                                         leftBottomText: widget._bpmString,
+                                        rightValueColor:
+                                            _bodyTemp >= widget._maxTemp
+                                                ? Colors.redAccent
+                                                : Colors.black,
                                         rightTopText: 'Body Temperature',
                                         rightValue: _bodyTemp,
                                         rightBottomText: 'Celsius',
@@ -552,6 +562,8 @@ class _TrackerPageState extends State<TrackerPage> {
                                       ),
                                       const SizedBox(height: smallSpacing),
                                       DoubleBoxRow(
+                                        leftValueColor: Colors.black,
+                                        rightValueColor: Colors.black,
                                         leftValue: widget._targetHeartRate,
                                         rightValue: widget._maxHeartRate,
                                         leftBottomText: widget._bpmString,

@@ -53,4 +53,10 @@ class UserLimitEstimator {
     // rounded result
     return double.parse(result.toStringAsFixed(1));
   }
+
+  /// Provides the temperature that would be considered a fever
+  /// Source: https://www.healthlinkbc.ca/tests-treatments-medications/medical-tests/body-temperature
+  double get feverTemperature {
+    return 38.0;
+  }
 }

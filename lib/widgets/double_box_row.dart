@@ -8,12 +8,15 @@ class DoubleBoxRow extends StatelessWidget {
     super.key,
     required this.leftValue,
     required this.rightValue,
+    required this.leftValueColor,
+    required this.rightValueColor,
     required this.leftBottomText,
     required this.rightBottomText,
     required this.leftTopText,
     required this.rightTopText,
   });
 
+  // strings & numbers inside the two containers
   final double leftValue;
   final double rightValue;
   final String leftBottomText;
@@ -21,16 +24,13 @@ class DoubleBoxRow extends StatelessWidget {
   final String leftTopText;
   final String rightTopText;
 
+  // Colors for main values
+  final Color leftValueColor;
+  final Color rightValueColor;
+
   // Predefined styling attributes
   static const int _flexVal = 1;
   static const double _numFontSize = 27;
-
-  // textstyle used for numbers
-  static const TextStyle _numTextStyle = TextStyle(
-    color: Colors.black,
-    fontSize: _numFontSize,
-    fontWeight: FontWeight.bold,
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,12 @@ class DoubleBoxRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(regularBorderRadius)),
               child: Column(children: [
                 Text(leftTopText),
-                Text("$leftValue", style: _numTextStyle),
+                Text("$leftValue",
+                    style: TextStyle(
+                      color: leftValueColor,
+                      fontSize: _numFontSize,
+                      fontWeight: FontWeight.bold,
+                    )),
                 Text(leftBottomText),
               ]),
             ),
@@ -66,7 +71,12 @@ class DoubleBoxRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(regularBorderRadius)),
               child: Column(children: [
                 Text(rightTopText),
-                Text("$rightValue", style: _numTextStyle),
+                Text("$rightValue",
+                    style: TextStyle(
+                      color: rightValueColor,
+                      fontSize: _numFontSize,
+                      fontWeight: FontWeight.bold,
+                    )),
                 Text(rightBottomText),
               ]),
             ),

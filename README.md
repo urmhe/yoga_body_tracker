@@ -1,6 +1,6 @@
 # YogaBodyTracker
 
-A lifestyle app which uses a cosinus earable device to track heart rate and body temperature while doing yoga.
+A lifestyle app which uses a cosinus earable device to track heart rate and body temperature while doing yoga or just exercising regularly.
 
 ## Disclaimer
 

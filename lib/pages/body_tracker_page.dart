@@ -42,7 +42,7 @@ class TrackerPage extends StatefulWidget {
   final String _bpmString = 'BPM';
   final String _targetHeartRateHeader = 'Target Heart Rate';
   final String _maxHeartRateHeader = 'Max Heart Rate';
-  final String _headerRecommendation = "Recommendation";
+  final String _headerEstimation = "Estimation";
   final String _connectedString = 'Connected';
   final String _connectingString = 'Connecting...';
   final String _disconnectedString = 'Disconnected';
@@ -556,7 +556,7 @@ class _TrackerPageState extends State<TrackerPage> {
                                     // contains the section header, the display elements for target and max heart rate and the row for the info buttons
                                     children: [
                                       Text(
-                                        widget._headerRecommendation,
+                                        widget._headerEstimation,
                                         style: widget._headerTextStyle,
                                         textAlign: TextAlign.center,
                                       ),
